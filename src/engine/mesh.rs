@@ -27,27 +27,24 @@ impl Mesh {
         self.triangles.push(triangle);
     }
 
-    pub fn hit(&self, ray: Ray) -> Option<Vector3> {
-        let mut success : bool = false;
-        let mut min_t : f64 = 0.0;
-        let mut min_position : Vector3 = ray.origin;
+    pub fn hit(&self, ray: Ray) -> Option<HitResult> {
+        let mut success = false;
+        let mut min_hit_result = HitResult::new();
 
         for traceable in self.spheres.iter() {
-            let hit_option: Option<Vector3>  = traceable.hit(ray);
+            let hit_option: Option<HitResult> = traceable.hit(ray);
             if hit_option.is_some() {
-                let hit_position: Vector3 = hit_option.unwrap();
-                let t : f64 = (hit_position - ray.origin).length();
-                success = true;
-                if t < min_t {
-                    min_t = t;
-                    min_position = hit_position;
+                let hit_result = hit_option.unwrap();
+                if hit_result.t < min_hit_result.t {
+                    success = true;
+                    min_hit_result = hit_result;
                 }
             }
         }
 
-        if success {
+        if !success {
             return None;
         }
-        Some(min_position)
+        Some(min_hit_result)
     }
 }

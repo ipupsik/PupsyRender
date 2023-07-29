@@ -3,6 +3,7 @@ use crate::engine::render_context::{*};
 use crate::engine::math::ray::{*};
 use crate::engine::math::vector3::{*};
 use crate::engine::scene::{*};
+use crate::engine::geometry::traceable::HitResult;
 use image::{Rgb};
 
 pub struct Renderer {
@@ -11,27 +12,23 @@ pub struct Renderer {
 
 impl Renderer {
     fn sample_scene(ray : Ray, scene : &Scene) -> Vector3 {
-        let mut success : bool = false;
-        let mut min_t : f64 = 0.0;
-        let mut min_position : Vector3 = ray.origin;
-
+        let mut success = false;
+        let mut min_hit_result = HitResult::new();
         for mesh in scene.meshes.iter() {
-            let hit_option: Option<Vector3>  = mesh.hit(ray);
+            let hit_option: Option<HitResult>  = mesh.hit(ray);
             if hit_option.is_some() {
-                let hit_position: Vector3 = hit_option.unwrap();
-                let t : f64 = (hit_position - ray.origin).length();
-                success = true;
-                if t < min_t {
-                    min_t = t;
-                    min_position = hit_position;
+                let hit_result = hit_option.unwrap();
+                if hit_result.t < min_hit_result.t {
+                    success = true;
+                    min_hit_result = hit_result
                 }
             }
         }
 
         if !success {
-            return ray.direction * 255.999;
+            return (ray.direction.y() + 0.5) * Vector3::new(0.5, 0.7, 0.1) * 255.999;
         }
-        min_position * 255.999
+        (min_hit_result.normal + Vector3::new(1.0, 1.0, 1.0)) * 0.5 * 255.999
     }
 
     pub fn render(&self, camera : Camera, render_context : RenderContext) {
@@ -42,7 +39,10 @@ impl Renderer {
 
             let world_position = Vector3{vec : [camera.width * (u - 1.0 / 2.0), camera.height * (v - 1.0 / 2.0), 0.0]};
 
-            let scene_color : Vector3 = Self::sample_scene(Ray{origin : camera.ray.origin, direction : world_position - camera.ray.direction}, &render_context.scene);
+            let ray_direction : Vector3 = world_position - camera.ray.direction;
+            ray_direction.normalize();
+
+            let scene_color : Vector3 = Self::sample_scene(Ray{origin : camera.ray.origin, direction : ray_direction}, &render_context.scene);
     
             *pixel = Rgb([scene_color.x() as u8, scene_color.y() as u8, scene_color.z() as u8]);
         }

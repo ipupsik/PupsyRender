@@ -12,16 +12,30 @@ impl Sphere {
 }
 
 impl Traceable for Sphere {
-    fn hit(&self, ray: Ray) -> Option<Vector3> {
-        let oc: Vector3 = ray.origin - self.position;
+    fn hit(&self, ray: Ray) -> Option<HitResult> {
+        let oc: Vector3 = self.position - ray.origin;
         let a: f64 = ray.direction.dot(ray.direction);
-        let b: f64 = 2.0 * oc.dot(ray.direction);
+        let half_b: f64 = oc.dot(ray.direction);
         let c: f64 = oc.dot(oc) - self.radius * self.radius;
-        let discriminant: f64 = b * b - 4.0 * a * c;
+        let discriminant: f64 = half_b * half_b - a * c;
         if discriminant < 0.0 {
             return None;
         }
 
-        Some(ray.at((-b - discriminant.sqrt()) / (2.0 * a)))
+        let discriminant_sqrt = discriminant.sqrt();
+        let mut t = (-half_b - discriminant_sqrt) / a;
+        if t < 0.0 {
+            t = (-half_b + discriminant_sqrt) / a;
+            if t < 0.0 {
+                return None;
+            }
+        }
+        let position = ray.at(t);
+        let mut normal = (position - self.position) / self.radius;
+        if normal.dot(ray.direction) > 0.0 {
+            normal = normal * -1.0;
+        }
+
+        Some(HitResult{position : position, t : t, normal : normal})
     }
 }

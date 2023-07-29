@@ -1,2 +1,3 @@
 # RayTracingContest
  
+![image](image.png)

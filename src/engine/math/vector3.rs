@@ -1,6 +1,6 @@
 
 // Rust program for Operator Overloading
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Sub, Mul, Div};
 
 #[derive(Copy, Clone)]
 pub struct Vector3 {
@@ -37,6 +37,11 @@ impl Vector3 {
             self.z() * _rightside.x() - self.x() * _rightside.z(),
             self.x() * _rightside.y() - self.y() * _rightside.x()]}
     }
+
+    pub fn normalize(&self) -> Vector3 {
+        let length : f64 = self.length();
+        Vector3{vec : [self.x() / length, self.y() / length, self.z() / length]}
+    }
 }
 
 // Rust operator 
@@ -45,6 +50,15 @@ impl Mul<f64> for Vector3 {
 
     fn mul(self, _rightside: f64) -> Vector3 {
         Vector3{ vec: [self.x() * _rightside, self.y() * _rightside, self.z() * _rightside] }
+    }
+}
+
+// Rust operator 
+impl Div<f64> for Vector3 {
+    type Output = Vector3;
+
+    fn div(self, _rightside: f64) -> Vector3 {
+        Vector3{ vec: [self.x() / _rightside, self.y() / _rightside, self.z() / _rightside] }
     }
 }
 

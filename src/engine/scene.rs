@@ -15,7 +15,8 @@ impl Scene {
 
     pub fn load_debug(&mut self) {
         let mut mesh : Mesh = Mesh::new();
-        mesh.add_sphere(Sphere{radius : 0.5, position : Vector3::new(0.0,0.0,-1.0)});
+        mesh.add_sphere(Sphere{radius : 0.5, position : Vector3::new(0.0, 0.0, 1.0)});
+        mesh.add_sphere(Sphere{radius : 100.0, position : Vector3::new(0.0, -100.5, 1.0)});
 
         self.meshes.push(mesh);
     }

@@ -12,7 +12,7 @@ impl Triangle {
 }
 
 impl Traceable for Triangle {
-    fn hit(&self, ray: Ray) -> Option<Vector3> {
-        Some(Vector3{vec:[0.0, 0.0, 0.0]})
+    fn hit(&self, ray: Ray) -> Option<HitResult> {
+        None
     }
 }
