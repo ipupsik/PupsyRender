@@ -2,6 +2,8 @@ use crate::engine::math::ray::{*};
 use crate::engine::math::vector3::{*};
 use crate::engine::geometry::traceable::{*};
 
+use std::rc::{*};
+
 pub struct Sphere {
     pub radius : f64,
     pub position: Vector3,
@@ -13,7 +15,7 @@ impl Sphere {
 
 impl Traceable for Sphere {
     fn hit(&self, ray: Ray) -> Option<HitResult> {
-        let oc: Vector3 = self.position - ray.origin;
+        let oc: Vector3 = ray.origin - self.position;
         let a: f64 = ray.direction.dot(ray.direction);
         let half_b: f64 = oc.dot(ray.direction);
         let c: f64 = oc.dot(oc) - self.radius * self.radius;
@@ -36,6 +38,6 @@ impl Traceable for Sphere {
             normal = normal * -1.0;
         }
 
-        Some(HitResult{position : position, t : t, normal : normal})
+        Some(HitResult{position : position, t : t, normal : normal, material : Weak::new()})
     }
 }

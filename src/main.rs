@@ -20,7 +20,8 @@ fn main() {
 
     scene.load_debug();
 
-    let render_context = RenderContext{render_target : render_target, scene : scene};
+    let render_context = RenderContext{render_target : render_target, scene : scene, spp : 100,
+        max_depth : 50};
 
     let renderer = Renderer{};
 

@@ -4,45 +4,73 @@ use crate::engine::math::ray::{*};
 use crate::engine::math::vector3::{*};
 use crate::engine::scene::{*};
 use crate::engine::geometry::traceable::HitResult;
+use crate::engine::material::brdf::{*};
 use image::{Rgb};
+use rand::Rng;
+
+use super::material::Material;
+use super::material::diffuse::DiffuseMaterial;
+
+use std::rc::{*};
 
 pub struct Renderer {
 
 }
 
 impl Renderer {
-    fn sample_scene(ray : Ray, scene : &Scene) -> Vector3 {
+    fn sample_scene(ray : Ray, scene : &Scene, depth : u64) -> Vector3 {
         let mut success = false;
         let mut min_hit_result = HitResult::new();
+
         for mesh in scene.meshes.iter() {
             let hit_option: Option<HitResult>  = mesh.hit(ray);
+
             if hit_option.is_some() {
                 let hit_result = hit_option.unwrap();
                 if hit_result.t < min_hit_result.t {
                     success = true;
-                    min_hit_result = hit_result
+                    min_hit_result = hit_result;
                 }
             }
         }
 
         if !success {
-            return (ray.direction.y() + 0.5) * Vector3::new(0.5, 0.7, 0.1) * 255.999;
+            let t = 0.5 * (ray.direction.y() + 1.0);
+            return (1.0 - t) * Vector3::new(1.0, 1.0, 1.0) + t * Vector3::new(0.5, 0.7, 1.0);
         }
-        (min_hit_result.normal + Vector3::new(1.0, 1.0, 1.0)) * 0.5 * 255.999
+
+        if depth > 1 {
+            let brdf_vector = unsafe {(*min_hit_result.material.as_ptr()).brdf(ray, &min_hit_result)};
+
+            let new_ray = Ray{origin : min_hit_result.position, direction : brdf_vector};
+            return Self::sample_scene(new_ray, scene, depth - 1) * 0.5;
+        }
+
+       Vector3::new(0.0, 0.0, 0.0)
     }
 
     pub fn render(&self, camera : Camera, render_context : RenderContext) {
         let mut frame_buffer = render_context.render_target.frame_buffer;
         for (x, y, pixel) in frame_buffer.enumerate_pixels_mut() {
-            let u = x as f64 / (render_context.render_target.width - 1) as f64;
-            let v = y as f64 / (render_context.render_target.height - 1) as f64;
+            let mut scene_color = Vector3::new(0.0, 0.0, 0.0);
+            for _ in 0..render_context.spp {
+                let u = (x as f64 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.width - 1) as f64;
+                let v = (y as f64 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.height - 1) as f64;
 
-            let world_position = Vector3{vec : [camera.width * (u - 1.0 / 2.0), camera.height * (v - 1.0 / 2.0), 0.0]};
+                let ray = camera.get_ray(u, 1.0 - v);
 
-            let ray_direction : Vector3 = world_position - camera.ray.direction;
-            ray_direction.normalize();
+                let mut current_sample = Self::sample_scene(ray, 
+                    &render_context.scene, render_context.max_depth);
 
-            let scene_color : Vector3 = Self::sample_scene(Ray{origin : camera.ray.origin, direction : ray_direction}, &render_context.scene);
+                // Divide the color by the number of samples and gamma-correct for gamma=2.0.
+                current_sample.vec[0] = current_sample.x().powf(1.0 / 2.2);
+                current_sample.vec[1] = current_sample.y().powf(1.0 / 2.2);
+                current_sample.vec[2] = current_sample.z().powf(1.0 / 2.2);
+
+                current_sample = current_sample * 255.999;
+
+                scene_color = scene_color + current_sample / render_context.spp as f64;
+            }
     
             *pixel = Rgb([scene_color.x() as u8, scene_color.y() as u8, scene_color.z() as u8]);
         }

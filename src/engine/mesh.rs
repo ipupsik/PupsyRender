@@ -1,21 +1,24 @@
 use std::vec::Vec;
 use std::option::Option;
 use crate::engine::material::{*};
+use crate::engine::material::diffuse::{*};
 use crate::engine::math::vector3::{*};
 use crate::engine::math::ray::{*};
 use crate::engine::geometry::traceable::{*};
 use crate::engine::geometry::sphere::{*};
 use crate::engine::geometry::triangle::{*};
 
+use std::rc::{*};
+
 pub struct Mesh {
-    material : Material,
+    pub material : Rc<Material>,
     spheres : Vec<Sphere>,
     triangles : Vec<Triangle>,
 }
 
 impl Mesh {
     pub fn new() -> Self {
-        Self{material : Material {  }, 
+        Self{material : Rc::new(Material::new()), 
             spheres : Vec::new(), triangles : Vec::new()}
     }
 
@@ -45,6 +48,9 @@ impl Mesh {
         if !success {
             return None;
         }
+
+        min_hit_result.material = Rc::downgrade(&self.material);
+
         Some(min_hit_result)
     }
 }

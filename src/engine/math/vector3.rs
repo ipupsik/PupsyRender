@@ -1,6 +1,7 @@
 
 // Rust program for Operator Overloading
 use std::ops::{Add, Sub, Mul, Div};
+use rand::{Rng};
 
 #[derive(Copy, Clone)]
 pub struct Vector3 {
@@ -28,6 +29,11 @@ impl Vector3 {
        (self.x() * self.x() + self.y() * self.y() + self.z() * self.z()).sqrt()
     }
 
+    pub fn length_squared(&self) -> f64 {
+        let length = self.length();
+        length * length
+     }
+
     pub fn dot(&self, _rightside: Vector3) -> f64 {
         self.x() * _rightside.x() + self.y() * _rightside.y() + self.z() * _rightside.z() 
     }
@@ -41,6 +47,25 @@ impl Vector3 {
     pub fn normalize(&self) -> Vector3 {
         let length : f64 = self.length();
         Vector3{vec : [self.x() / length, self.y() / length, self.z() / length]}
+    }
+
+    pub fn random(min : f64, max : f64) -> Vector3 {
+        Vector3{vec: [rand::thread_rng().gen_range(min..max), 
+            rand::thread_rng().gen_range(min..max), 
+            rand::thread_rng().gen_range(min..max)]}
+    }
+
+    pub fn random_in_unit_sphere() -> Vector3 {
+        loop {
+            let point = Vector3::random(0.0, 1.0);
+            if point.length_squared() <= 1.0 {
+                return point;
+            }
+        }
+    }
+
+    pub fn print(&self) {
+        println!("x = {}; y = {}; z = {}", self.x(), self.y(), self.z());
     }
 }
 
