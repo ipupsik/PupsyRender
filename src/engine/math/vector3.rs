@@ -8,6 +8,10 @@ pub struct Vector3 {
 }
 
 impl Vector3 {
+    pub fn new(x : f64, y : f64, z : f64) -> Self {
+        Vector3{vec: [x, y, z]}
+    }
+
     pub fn x(&self) -> f64 {
         self.vec[0]
     }

@@ -11,7 +11,27 @@ pub struct Renderer {
 
 impl Renderer {
     fn sample_scene(ray : Ray, scene : &Scene) -> Vector3 {
-        ray.direction * 255.999
+        let mut success : bool = false;
+        let mut min_t : f64 = 0.0;
+        let mut min_position : Vector3 = ray.origin;
+
+        for mesh in scene.meshes.iter() {
+            let hit_option: Option<Vector3>  = mesh.hit(ray);
+            if hit_option.is_some() {
+                let hit_position: Vector3 = hit_option.unwrap();
+                let t : f64 = (hit_position - ray.origin).length();
+                success = true;
+                if t < min_t {
+                    min_t = t;
+                    min_position = hit_position;
+                }
+            }
+        }
+
+        if !success {
+            return ray.direction * 255.999;
+        }
+        min_position * 255.999
     }
 
     pub fn render(&self, camera : Camera, render_context : RenderContext) {

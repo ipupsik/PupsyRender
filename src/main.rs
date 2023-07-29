@@ -16,7 +16,11 @@ fn main() {
 
     let render_target = RenderTarget::new(ImageBuffer::new(IMAGE_WIDTH as u32, IMAGE_HEIGHT as u32));
 
-    let render_context = RenderContext{render_target : render_target, scene : Scene{}};
+    let mut scene = Scene::new();
+
+    scene.load_debug();
+
+    let render_context = RenderContext{render_target : render_target, scene : scene};
 
     let renderer = Renderer{};
 
