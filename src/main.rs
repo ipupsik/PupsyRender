@@ -1,8 +1,9 @@
-use pupsy_raytracing_engine::engine::{vector3::Vector3, renderer::Renderer, render_context::RenderContext, ray::Ray, camera::Camera, render_target::RenderTarget};
-use image::{RgbImage, ImageBuffer, Rgb};
+use pupsy_raytracing_engine::engine::{renderer::Renderer, render_context::RenderContext, camera::Camera, 
+    scene::Scene, render_target::RenderTarget};
+use pupsy_raytracing_engine::engine::math::{vector3::Vector3, ray::Ray};
+use image::{ImageBuffer};
 
 fn main() {
-
     const IMAGE_WIDTH: u64 = 512;
     const IMAGE_HEIGHT: u64 = 512;
     const ASPECT_RATIO: f64 = IMAGE_WIDTH as f64 / IMAGE_HEIGHT as f64;
@@ -15,7 +16,7 @@ fn main() {
 
     let render_target = RenderTarget::new(ImageBuffer::new(IMAGE_WIDTH as u32, IMAGE_HEIGHT as u32));
 
-    let render_context = RenderContext{render_target : render_target};
+    let render_context = RenderContext{render_target : render_target, scene : Scene{}};
 
     let renderer = Renderer{};
 

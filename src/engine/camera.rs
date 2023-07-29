@@ -1,4 +1,4 @@
-use crate::engine::ray::{*};
+use crate::engine::math::ray::{*};
 
 pub struct Camera {
     pub aspect_ratio: f64,

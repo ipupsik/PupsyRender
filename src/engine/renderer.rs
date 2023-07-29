@@ -1,25 +1,32 @@
 use crate::engine::camera::{*};
 use crate::engine::render_context::{*};
-use image::{RgbImage, ImageBuffer, Rgb};
+use crate::engine::math::ray::{*};
+use crate::engine::math::vector3::{*};
+use crate::engine::scene::{*};
+use image::{Rgb};
 
 pub struct Renderer {
 
 }
 
 impl Renderer {
-    pub fn render(&self, camera : Camera, mut render_context : RenderContext) {
-        for (x, y, pixel) in render_context.render_target.frame_buffer.enumerate_pixels_mut() {
-            let r = x as f64 / (render_context.render_target.width - 1) as f64;
-            let g = y as f64 / (render_context.render_target.height - 1) as f64;
-            let b = 0.25;
+    fn sample_scene(ray : Ray, scene : &Scene) -> Vector3 {
+        ray.direction * 255.999
+    }
+
+    pub fn render(&self, camera : Camera, render_context : RenderContext) {
+        let mut frame_buffer = render_context.render_target.frame_buffer;
+        for (x, y, pixel) in frame_buffer.enumerate_pixels_mut() {
+            let u = x as f64 / (render_context.render_target.width - 1) as f64;
+            let v = y as f64 / (render_context.render_target.height - 1) as f64;
+
+            let world_position = Vector3{vec : [camera.width * (u - 1.0 / 2.0), camera.height * (v - 1.0 / 2.0), 0.0]};
+
+            let scene_color : Vector3 = Self::sample_scene(Ray{origin : camera.ray.origin, direction : world_position - camera.ray.direction}, &render_context.scene);
     
-            let ir = (255.999 * r) as u8;
-            let ig = (255.999 * g) as u8;
-            let ib = (255.999 * b) as u8;
-    
-            *pixel = Rgb([ir, ig, ib]);
+            *pixel = Rgb([scene_color.x() as u8, scene_color.y() as u8, scene_color.z() as u8]);
         }
     
-        render_context.render_target.frame_buffer.save("content/image.png").unwrap();
+        frame_buffer.save("image.png").unwrap();
     }
 }
