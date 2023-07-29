@@ -6,7 +6,7 @@ use crate::engine::math::vector3::{*};
 use crate::engine::material::diffuse::{*};
 use crate::engine::geometry::traceable::{*};
 
-enum MaterialType {
+pub enum MaterialType {
     Diffuse
 }
 
@@ -15,8 +15,8 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new() -> Self {
-        Self{material_type : MaterialType::Diffuse}
+    pub fn new(material_type : MaterialType) -> Self {
+        Self{material_type : material_type}
     }
 
     pub fn brdf(&self, ray: Ray, hit_result : &HitResult) -> Vector3 {

@@ -18,8 +18,14 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn new() -> Self {
-        Self{material : Rc::new(Material::new()), 
+        Self{material : Rc::new(Material::new(MaterialType::Diffuse)), 
             spheres : Vec::new(), triangles : Vec::new()}
+    }
+
+    pub fn set_material(&mut self, material_type : MaterialType) {
+        match material_type {
+            MaterialType::Diffuse =>  self.material = Rc::new(Material::new(MaterialType::Diffuse)),
+        }
     }
 
     pub fn add_sphere(&mut self, sphere : Sphere) {
