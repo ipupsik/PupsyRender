@@ -30,6 +30,8 @@ fn main() {
         }
     }
 
+    scene.load_gltf("example1.gltf");
+
     let render_context = RenderContext{render_target : render_target, scene : scene, spp : 10,
         max_depth : 5};
 
