@@ -1,13 +1,13 @@
-use crate::engine::math::vector3::{*};
+use glam::{Vec3A};
 
 #[derive(Copy, Clone)]
 pub struct Ray {
-    pub origin: Vector3,
-    pub direction: Vector3
+    pub origin: Vec3A,
+    pub direction: Vec3A
 }
 
 impl Ray {
-    pub fn at(self, t :f64) -> Vector3 {
+    pub fn at(self, t :f32) -> Vec3A {
         self.origin + self.direction * t
     }
 }

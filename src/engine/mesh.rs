@@ -2,7 +2,7 @@ use std::vec::Vec;
 use std::option::Option;
 use crate::engine::material::{*};
 use crate::engine::material::diffuse::{*};
-use crate::engine::math::vector3::{*};
+use glam::{Vec3A};
 use crate::engine::math::ray::{*};
 use crate::engine::geometry::traceable::{*};
 use crate::engine::geometry::sphere::{*};

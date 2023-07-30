@@ -1,12 +1,12 @@
 use crate::engine::math::ray::{*};
-use crate::engine::math::vector3::{*};
 use crate::engine::geometry::traceable::{*};
+use glam::{Vec3A};
 
 use std::rc::{*};
 
 pub struct Sphere {
-    pub radius : f64,
-    pub position: Vector3,
+    pub radius : f32,
+    pub position: Vec3A,
 }
 
 impl Sphere {
@@ -15,11 +15,11 @@ impl Sphere {
 
 impl Traceable for Sphere {
     fn hit(&self, ray: Ray) -> Option<HitResult> {
-        let oc: Vector3 = ray.origin - self.position;
-        let a: f64 = ray.direction.dot(ray.direction);
-        let half_b: f64 = oc.dot(ray.direction);
-        let c: f64 = oc.dot(oc) - self.radius * self.radius;
-        let discriminant: f64 = half_b * half_b - a * c;
+        let oc: Vec3A = ray.origin - self.position;
+        let a: f32 = ray.direction.dot(ray.direction);
+        let half_b: f32 = oc.dot(ray.direction);
+        let c: f32 = oc.dot(oc) - self.radius * self.radius;
+        let discriminant: f32 = half_b * half_b - a * c;
         if discriminant < 0.0 {
             return None;
         }

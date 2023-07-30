@@ -1,9 +1,9 @@
-use crate::engine::math::vector3::{*};
 use crate::engine::math::ray::{*};
 use crate::engine::geometry::traceable::{*};
+use glam::{Vec3A};
 
 pub struct Triangle {
-    positions: [Vector3; 3],
+    positions: [Vec3A; 3],
 }
 
 impl Triangle {

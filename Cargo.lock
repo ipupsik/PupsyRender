@@ -165,6 +165,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42218cb640844e3872cc3c153dc975229e080a6c4733b34709ef445610550226"
+
+[[package]]
 name = "gltf"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -425,6 +431,7 @@ dependencies = [
 name = "pupsy_raytracing_engine"
 version = "1.0.0"
 dependencies = [
+ "glam",
  "gltf",
  "image 0.23.14",
  "rand",

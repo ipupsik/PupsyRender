@@ -1,16 +1,16 @@
 use crate::engine::material::{*};
 
 use crate::engine::math::ray::{*};
-use crate::engine::math::vector3::{*};
 use crate::engine::geometry::traceable::{*};
+use crate::engine::math::utils::{*};
 
 pub struct DiffuseMaterial {
     
 }
 
 impl Scatter for DiffuseMaterial {
-    fn scatter(&self, ray: Ray, hit_result : &HitResult) -> Vector3 {
-        let diffuse_position = hit_result.normal + Vector3::random_in_unit_sphere();
+    fn scatter(&self, ray: Ray, hit_result : &HitResult) -> Vec3A {
+        let diffuse_position = hit_result.normal + random_in_unit_sphere();
         diffuse_position.normalize()
     }
 }
