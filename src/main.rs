@@ -30,8 +30,8 @@ fn main() {
         }
     }
 
-    let render_context = RenderContext{render_target : render_target, scene : scene, spp : 100,
-        max_depth : 50};
+    let render_context = RenderContext{render_target : render_target, scene : scene, spp : 10,
+        max_depth : 5};
 
     let renderer = Renderer{};
 
