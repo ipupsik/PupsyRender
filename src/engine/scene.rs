@@ -10,6 +10,8 @@ use super::geometry::sphere::{*};
 use super::geometry::triangle::{*};
 use super::geometry::vertex::Vertex;
 
+use data_url::{DataUrl, mime};
+
 use std::rc::{*};
 use std::io;
 use std::fs;
@@ -49,7 +51,15 @@ impl Scene {
                                 let buffer_view = buffer_view_option.unwrap();
                                 let buffer = buffer_view.buffer();
 
-                                let buffer_source = buffer.source();
+                                let mut buffer_raw_data: Vec<u8> = Vec::new();
+                                match buffer.source() {
+                                    gltf::buffer::Source::Uri(data) => {
+                                        // TODO: Share buffers, otherwise we will decode it on each triangle
+                                        let url = DataUrl::process(data).unwrap();
+                                        (buffer_raw_data, _) = url.decode_to_vec().unwrap();
+                                    },
+                                    gltf::buffer::Source::Bin => println!("Engine does not support binary buffer format"),
+                                }
                                 
                                 let size = data_type.multiplicity() * raw_type.size();
 
@@ -57,6 +67,8 @@ impl Scene {
 
                                 let mut buffer_pos = 0;
                                 while buffer_pos < buffer_view.length() {
+                                    let pos1_raw_data = buffer_raw_data[buffer_view.offset() + buffer_pos];
+
                                     let mut pos1 = Vec3A::ZERO;
                                     let mut pos2 = Vec3A::ZERO;
                                     let mut pos3 = Vec3A::ZERO;
