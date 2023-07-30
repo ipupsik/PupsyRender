@@ -11,21 +11,15 @@ use crate::engine::geometry::triangle::{*};
 use std::rc::{*};
 
 pub struct Mesh {
-    pub material : Rc<Material>,
+    material : Rc<Material>,
+
     spheres : Vec<Sphere>,
     triangles : Vec<Triangle>,
 }
 
 impl Mesh {
-    pub fn new() -> Self {
-        Self{material : Rc::new(Material::new(MaterialType::Diffuse)), 
-            spheres : Vec::new(), triangles : Vec::new()}
-    }
-
-    pub fn set_material(&mut self, material_type : MaterialType) {
-        match material_type {
-            MaterialType::Diffuse =>  self.material = Rc::new(Material::new(MaterialType::Diffuse)),
-        }
+    pub fn new(material : Rc<Material>) -> Self {
+        Self{material : material, spheres : Vec::new(), triangles : Vec::new()}
     }
 
     pub fn add_sphere(&mut self, sphere : Sphere) {

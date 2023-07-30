@@ -4,12 +4,11 @@ use crate::engine::math::ray::{*};
 use crate::engine::math::vector3::{*};
 use crate::engine::scene::{*};
 use crate::engine::geometry::traceable::HitResult;
-use crate::engine::material::brdf::{*};
 use image::{Rgb};
 use rand::Rng;
 
 use super::material::Material;
-use super::material::diffuse::DiffuseMaterial;
+use super::material::diffuse::{*};
 
 use std::rc::{*};
 
@@ -40,10 +39,10 @@ impl Renderer {
         }
 
         if depth > 1 {
-            let brdf_vector = unsafe {(*min_hit_result.material.as_ptr()).brdf(ray, &min_hit_result)};
+            let brdf_vector = unsafe {(*min_hit_result.material.as_ptr()).scatter.scatter(ray, &min_hit_result)};
 
             let new_ray = Ray{origin : min_hit_result.position, direction : brdf_vector};
-            return Self::sample_scene(new_ray, scene, depth - 1) * 0.5;
+            return Self::sample_scene(new_ray, scene, depth - 1) * 0.8;
         }
 
        Vector3::new(0.0, 0.0, 0.0)
