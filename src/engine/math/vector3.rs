@@ -57,7 +57,7 @@ impl Vector3 {
 
     pub fn random_in_unit_sphere() -> Vector3 {
         loop {
-            let point = Vector3::random(0.0, 1.0);
+            let point = Vector3::random(-1.0, 1.0);
             if point.length_squared() <= 1.0 {
                 return point;
             }
