@@ -1,12 +1,13 @@
 use std::vec;
 use crate::engine::mesh::Mesh;
-use glam::{Vec3A, Vec4, Mat4};
+use glam::{Vec2, Vec3A, Vec4, Mat4};
 use gltf::json::camera::Type;
 use crate::engine::material::{*};
 use crate::engine::material::diffuse::{*};
 use crate::engine::material::metal::{*};
 use crate::engine::material::normal::{*};
 use crate::engine::material::refraction::{*};
+use crate::engine::material::uv::{*};
 
 use super::geometry::sphere::{*};
 use super::geometry::triangle::{*};
@@ -93,9 +94,9 @@ impl Scene {
                                     let pos3_offset = pos2_offset + 4 * 3;
                                     let pos3 = Self::decode_vec3(buffer, pos_raw_data_pos + pos3_offset);
 
-                                    let vertex1 = Vertex::new(pos1);
-                                    let vertex2 = Vertex::new(pos2);
-                                    let vertex3 = Vertex::new(pos3);
+                                    let vertex1 = Vertex::new(pos1, Vec2::ZERO);
+                                    let vertex2 = Vertex::new(pos2, Vec2::ZERO);
+                                    let vertex3 = Vertex::new(pos3, Vec2::ZERO);
 
                                     mesh.add_geometry(Rc::new(Triangle::new(vertex1, vertex2, vertex3)));
 
@@ -178,6 +179,15 @@ impl Scene {
         };
         let rc_refraction_material = Rc::new(refraction_material);
 
+        let uv_material_data = Rc::new(
+            UVMaterial{}
+        );
+        let uv_material = Material{
+            scatter : uv_material_data.clone(),
+            sample: uv_material_data.clone()
+        };
+        let rc_uv_material = Rc::new(uv_material);
+
         let mut mesh : Mesh = Mesh::new(rc_diffuse_material.clone());
         mesh.add_geometry(Rc::new(Sphere{radius : 0.5, position : Vec3A::new(0.0, 0.0, 1.2)}));
         mesh.add_geometry(Rc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)}));
@@ -197,7 +207,7 @@ impl Scene {
 
         self.load_gltf("example1.gltf");
 
-        let mut mesh : Mesh = Mesh::new(rc_normal_material.clone());
+        let mut mesh : Mesh = Mesh::new(rc_uv_material.clone());
         mesh.add_geometry(Rc::new(Triangle::DEFAULT));
         self.meshes.push(mesh);
     }

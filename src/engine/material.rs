@@ -1,6 +1,7 @@
 pub mod diffuse;
 pub mod metal;
 pub mod normal;
+pub mod uv;
 pub mod refraction;
 
 use crate::engine::math::ray::{*};

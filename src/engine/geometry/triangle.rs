@@ -20,9 +20,9 @@ impl Triangle {
     }
 
     pub const DEFAULT: Self = Self::new(
-        Vertex::new(Vec3A::new(-0.4, -0.2, 0.45)),
-        Vertex::new(Vec3A::new(0.0, 0.0, 0.45)),
-        Vertex::new(Vec3A::new(0.4, -0.2, 0.45))
+        Vertex::new(Vec3A::new(-0.4, -0.2, 0.45), Vec2::new(0.0, 0.0)),
+        Vertex::new(Vec3A::new(0.0, 0.0, 0.45), Vec2::new(1.0, 0.0)),
+        Vertex::new(Vec3A::new(0.4, -0.2, 0.45), Vec2::new(0.0, 1.0))
     );
 }
 
@@ -44,13 +44,13 @@ impl Traceable for Triangle {
         let inv_det = 1.0 / det;
 
         let tvec = ray.origin - self.vertices[0].position;
-        let u = tvec.dot(pvec) * inv_det;
+        let mut u = tvec.dot(pvec) * inv_det;
         if u < 0.0 || u > 1.0 {
             return None;
         }
 
         let qvec = tvec.cross(v0v1);
-        let v = ray.direction.dot(qvec) * inv_det;
+        let mut v = ray.direction.dot(qvec) * inv_det;
         if v < 0.0 || u + v > 1.0 {
             return None;
         }
@@ -59,8 +59,10 @@ impl Traceable for Triangle {
         if t < t_min || t > t_max {
             return None;
         }
-        
+
+        let uv = self.vertices[0].uv * (1.0 - v - u) + self.vertices[1].uv * u + self.vertices[2].uv * v;
+
         return Some(HitResult { position: ray.at(t), t: t, normal: self.normal, material: Weak::new(), 
-            uv: Vec2::new(u, v), front_face: front_face });
+            uv: uv, front_face: front_face });
     }
 }
