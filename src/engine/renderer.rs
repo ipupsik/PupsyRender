@@ -17,6 +17,17 @@ pub struct Renderer {
 }
 
 impl Renderer {
+    fn gamma_correction(input: Vec3A) -> Vec3A {
+        Vec3A::new(
+            input.x.powf(1.0 / 2.2),
+            input.y.powf(1.0 / 2.2),
+            input.z.powf(1.0 / 2.2))
+    }
+
+    fn tone_mapping(input: Vec3A) -> Vec3A {
+       input / (Vec3A::ONE + input)
+    }
+
     fn sample_scene(ray : Ray, scene : &Scene, depth : u64) -> Vec3A {
         let mut success = false;
         let mut min_hit_result = HitResult::new();
@@ -61,10 +72,8 @@ impl Renderer {
                 let mut current_sample = Self::sample_scene(ray, 
                     &render_context.scene, render_context.max_depth);
 
-                // Divide the color by the number of samples and gamma-correct for gamma=2.0.
-                current_sample.x = current_sample.x.powf(1.0 / 2.2);
-                current_sample.y = current_sample.y.powf(1.0 / 2.2);
-                current_sample.z = current_sample.z.powf(1.0 / 2.2);
+                //current_sample = Self::tone_mapping(current_sample);
+                current_sample = Self::gamma_correction(current_sample);    
 
                 current_sample = current_sample * 255.999;
 

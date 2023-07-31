@@ -10,7 +10,7 @@ pub struct Triangle {
 }
 
 impl Triangle {
-    pub const Epsilon: f32 = 1e-8;
+    pub const EPSILON: f32 = 1e-8;
     
     pub fn new(v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self{
         Self {
@@ -29,23 +29,23 @@ impl Traceable for Triangle {
 
         // if the determinant is negative, the triangle is 'back facing'
         // if the determinant is close to 0, the ray misses the triangle
-        if det.abs() < Triangle::Epsilon {
+        if det.abs() < Triangle::EPSILON {
             return None;
         }
-        let invDet = 1.0 / det;
+        let inv_det = 1.0 / det;
 
         let tvec = ray.origin - self.vertices[0].position;
-        let u = tvec.dot(pvec) * invDet;
+        let u = tvec.dot(pvec) * inv_det;
         if u < 0.0 || u > 1.0 {
             return None;
         }
 
         let qvec = tvec.cross(v0v1);
-        let v = ray.direction.dot(qvec) * invDet;
+        let v = ray.direction.dot(qvec) * inv_det;
         if v < 0.0 || u + v > 1.0 {
             return None;
         }
-        let t = v0v2.dot(qvec) * invDet;
+        let t = v0v2.dot(qvec) * inv_det;
 
         if t < t_min || t > t_max {
             return None;
