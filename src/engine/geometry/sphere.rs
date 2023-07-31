@@ -14,7 +14,7 @@ impl Sphere {
 }
 
 impl Traceable for Sphere {
-    fn hit(&self, ray: Ray) -> Option<HitResult> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let oc: Vec3A = ray.origin - self.position;
         let a: f32 = ray.direction.dot(ray.direction);
         let half_b: f32 = oc.dot(ray.direction);
@@ -26,9 +26,9 @@ impl Traceable for Sphere {
 
         let discriminant_sqrt = discriminant.sqrt();
         let mut t = (-half_b - discriminant_sqrt) / a;
-        if t < 0.0 {
+        if t < t_min || t > t_max {
             t = (-half_b + discriminant_sqrt) / a;
-            if t < 0.0 {
+            if t < t_min {
                 return None;
             }
         }

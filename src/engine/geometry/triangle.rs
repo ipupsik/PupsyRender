@@ -21,7 +21,7 @@ impl Triangle {
 }
 
 impl Traceable for Triangle {
-    fn hit(&self, ray: Ray) -> Option<HitResult> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let v0v1 = self.vertices[1].position - self.vertices[0].position;
         let v0v2 = self.vertices[2].position - self.vertices[0].position;
         let pvec = ray.direction.cross(v0v2);
@@ -29,7 +29,7 @@ impl Traceable for Triangle {
 
         // if the determinant is negative, the triangle is 'back facing'
         // if the determinant is close to 0, the ray misses the triangle
-        if det < Triangle::Epsilon {
+        if det.abs() < Triangle::Epsilon {
             return None;
         }
         let invDet = 1.0 / det;
@@ -46,6 +46,10 @@ impl Traceable for Triangle {
             return None;
         }
         let t = v0v2.dot(qvec) * invDet;
+
+        if t < t_min || t > t_max {
+            return None;
+        }
         
         return Some(HitResult { position: ray.at(t), t: t, normal: self.normal, material: Weak::new(), uv: Vec2::new(u, v) });
     }

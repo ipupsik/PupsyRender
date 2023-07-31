@@ -20,6 +20,16 @@ pub struct Scene {
     pub meshes: Vec<Mesh>,
 }
 
+struct GLTFContext {
+    pub decoded_buffers : Vec<Vec<u8>>,
+}
+
+impl GLTFContext {
+    pub fn new() -> Self {
+        Self{decoded_buffers : Vec::new()}
+    }
+}
+
 impl Scene {
     pub fn new() -> Self {
         Self { 
@@ -27,7 +37,7 @@ impl Scene {
         }
     }
 
-    fn load_gltf_node(&mut self, node: &gltf::Node, matrix: &Mat4) {
+    fn load_gltf_node(&mut self, context : &GLTFContext, node: &gltf::Node, matrix: &Mat4) {
         let node_transform_matrix = node.transform().matrix();
 
         let new_matrix = matrix.mul_mat4(&Mat4::from_cols_array_2d(&node_transform_matrix));
@@ -49,17 +59,7 @@ impl Scene {
                             let buffer_view_option = attribute.1.view();
                             if buffer_view_option.is_some() {
                                 let buffer_view = buffer_view_option.unwrap();
-                                let buffer = buffer_view.buffer();
-
-                                let mut buffer_raw_data: Vec<u8> = Vec::new();
-                                match buffer.source() {
-                                    gltf::buffer::Source::Uri(data) => {
-                                        // TODO: Share buffers, otherwise we will decode it on each triangle
-                                        let url = DataUrl::process(data).unwrap();
-                                        (buffer_raw_data, _) = url.decode_to_vec().unwrap();
-                                    },
-                                    gltf::buffer::Source::Bin => println!("Engine does not support binary buffer format"),
-                                }
+                                let buffer = &context.decoded_buffers[buffer_view.index()];
                                 
                                 let size = data_type.multiplicity() * raw_type.size();
 
@@ -68,7 +68,7 @@ impl Scene {
                                 let mut buffer_pos = 0;
                                 while buffer_pos < buffer_view.length() {
                                     let mut pos_raw_data_pos = buffer_view.offset() + buffer_pos;
-                                    let pos_raw_data: [u8; 4 * 3 * 3] = buffer_raw_data[pos_raw_data_pos..pos_raw_data_pos + 4 * 3 * 3].try_into().expect("Degenerate triangle");
+                                    let pos_raw_data: [u8; 4 * 3 * 3] = buffer[pos_raw_data_pos..pos_raw_data_pos + 4 * 3 * 3].try_into().expect("Degenerate triangle");
 
                                     let pos1_offset = 0;
                                     let mut pos1 = Vec3A::ZERO;
@@ -78,15 +78,15 @@ impl Scene {
 
                                     let pos2_offset = pos1_offset + 4 * 3;
                                     let mut pos2 = Vec3A::ZERO;
-                                    pos2.x = f32::from_be_bytes(pos_raw_data[pos2_offset..pos2_offset + 4].try_into().expect("Invalid [1] x coord"));
-                                    pos2.y = f32::from_be_bytes(pos_raw_data[pos2_offset + 4..pos2_offset + 4 * 2].try_into().expect("Invalid [1] y coord"));
-                                    pos2.z = f32::from_be_bytes(pos_raw_data[pos2_offset + 4 * 2..pos2_offset + 4 * 3].try_into().expect("Invalid [1] z coord"));
+                                    pos2.x = f32::from_be_bytes(pos_raw_data[pos2_offset..pos2_offset + 4].try_into().expect("Invalid [2] x coord"));
+                                    pos2.y = f32::from_be_bytes(pos_raw_data[pos2_offset + 4..pos2_offset + 4 * 2].try_into().expect("Invalid [2] y coord"));
+                                    pos2.z = f32::from_be_bytes(pos_raw_data[pos2_offset + 4 * 2..pos2_offset + 4 * 3].try_into().expect("Invalid [2] z coord"));
 
                                     let pos3_offset = pos2_offset + 4 * 3;
                                     let mut pos3 = Vec3A::ZERO;
-                                    pos3.x = f32::from_be_bytes(pos_raw_data[pos3_offset..pos3_offset + 4].try_into().expect("Invalid [1] x coord"));
-                                    pos3.y = f32::from_be_bytes(pos_raw_data[pos3_offset + 4..pos3_offset + 4 * 2].try_into().expect("Invalid [1] y coord"));
-                                    pos3.z = f32::from_be_bytes(pos_raw_data[pos3_offset + 4 * 2..pos3_offset + 4 * 3].try_into().expect("Invalid [1] z coord"));
+                                    pos3.x = f32::from_be_bytes(pos_raw_data[pos3_offset..pos3_offset + 4].try_into().expect("Invalid [3] x coord"));
+                                    pos3.y = f32::from_be_bytes(pos_raw_data[pos3_offset + 4..pos3_offset + 4 * 2].try_into().expect("Invalid [3] y coord"));
+                                    pos3.z = f32::from_be_bytes(pos_raw_data[pos3_offset + 4 * 2..pos3_offset + 4 * 3].try_into().expect("Invalid [3] z coord"));
 
                                     let vertex1 = Vertex::new(pos1);
                                     let vertex2 = Vertex::new(pos2);
@@ -113,7 +113,7 @@ impl Scene {
         }
 
         for child in node.children() {
-            self.load_gltf_node(&child, &new_matrix);
+            self.load_gltf_node(context, &child, &new_matrix);
         }
     }
 
@@ -121,9 +121,23 @@ impl Scene {
         let file = fs::File::open(path).unwrap();
         let reader = io::BufReader::new(file);
         let gltf = gltf::Gltf::from_reader(reader).unwrap();
+        
+        let mut context = GLTFContext::new();
+        context.decoded_buffers.resize(gltf.buffers().count(), Vec::new());
+        for buffer in gltf.buffers() {
+            match buffer.source() {
+                gltf::buffer::Source::Uri(data) => {
+                    let url = DataUrl::process(data).unwrap();
+                    (context.decoded_buffers[buffer.index()], _) = url.decode_to_vec().unwrap();
+                },
+                gltf::buffer::Source::Bin => println!("Engine does not support binary buffer format"),
+            }
+        }
+
+
         for scene in gltf.scenes() {
             for node in scene.nodes() {
-                self.load_gltf_node(&node, &Mat4::IDENTITY);
+                self.load_gltf_node(&context, &node, &Mat4::IDENTITY);
             }
         }
     }

@@ -14,7 +14,7 @@ pub struct HitResult {
 }
 
 pub trait Traceable {
-    fn hit(&self, ray: Ray) -> Option<HitResult>;
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
 }
 
 impl HitResult {

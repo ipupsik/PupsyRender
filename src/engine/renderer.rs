@@ -39,9 +39,9 @@ impl Renderer {
         }
 
         if depth > 1 {
-            let brdf_vector = unsafe {(*min_hit_result.material.as_ptr()).scatter.scatter(ray, &min_hit_result)};
+            let scatter_vector = unsafe {(*min_hit_result.material.as_ptr()).scatter.scatter(ray, &min_hit_result)};
 
-            let new_ray = Ray{origin : min_hit_result.position, direction : brdf_vector};
+            let new_ray = Ray{origin : min_hit_result.position, direction : scatter_vector};
             return Self::sample_scene(new_ray, scene, depth - 1) * 0.8;
         }
 

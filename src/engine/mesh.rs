@@ -35,7 +35,7 @@ impl Mesh {
         let mut min_hit_result = HitResult::new();
 
         for traceable in self.spheres.iter() {
-            let hit_option: Option<HitResult> = traceable.hit(ray);
+            let hit_option: Option<HitResult> = traceable.hit(ray, 0.001, f32::MAX);
             if hit_option.is_some() {
                 let hit_result = hit_option.unwrap();
                 if hit_result.t < min_hit_result.t {
