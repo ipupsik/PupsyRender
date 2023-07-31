@@ -43,9 +43,9 @@ impl Scene {
 
     fn decode_vec3(buffer : &Vec<u8>, offset : usize) -> Vec3A {
         Vec3A::new(
-            f32::from_be_bytes(buffer[offset..offset + 4].try_into().expect("Invalid [1] x coord")),
-            f32::from_be_bytes(buffer[offset + 4..offset + 4 * 2].try_into().expect("Invalid [1] y coord")),
-            f32::from_be_bytes(buffer[offset + 4 * 2..offset + 4 * 3].try_into().expect("Invalid [1] z coord"))
+            f32::from_le_bytes(buffer[offset..offset + 4].try_into().expect("Invalid [1] x coord")),
+            f32::from_le_bytes(buffer[offset + 4..offset + 4 * 2].try_into().expect("Invalid [1] y coord")),
+            f32::from_le_bytes(buffer[offset + 4 * 2..offset + 4 * 3].try_into().expect("Invalid [1] z coord"))
         )
     }
 
@@ -58,7 +58,7 @@ impl Scene {
         if mesh_option.is_some() {
             let gltf_mesh = mesh_option.unwrap();
 
-            let diffuse_material: Arc<Box<dyn Material>> = Arc::new(Box::new(DiffuseMaterial{}));
+            let diffuse_material: Arc<Box<dyn Material>> = Arc::new(Box::new(NormalMaterial{}));
 
             let mut mesh : Mesh = Mesh::new(diffuse_material.clone());
 
@@ -160,23 +160,23 @@ impl Scene {
         let mut mesh : Mesh = Mesh::new(diffuse_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(0.0, 0.0, 1.2)}));
         mesh.add_geometry(Arc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)}));
-        self.meshes.push(mesh);
+        //self.meshes.push(mesh);
         
         let mut mesh : Mesh = Mesh::new(metal_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
-        self.meshes.push(mesh);
+        //self.meshes.push(mesh);
 
         let mut mesh : Mesh = Mesh::new(normal_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
-        self.meshes.push(mesh);
+        //self.meshes.push(mesh);
 
         let mut mesh : Mesh = Mesh::new(refraction_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.4, position : Vec3A::new(-0.5, 0.3, 0.7)}));
-        self.meshes.push(mesh);
+        //self.meshes.push(mesh);
 
         let mut mesh : Mesh = Mesh::new(uv_material.clone());
         mesh.add_geometry(Arc::new(Triangle::DEFAULT));
-        self.meshes.push(mesh);
+        //self.meshes.push(mesh);
 
         // gltf
         self.load_gltf("example1.gltf");

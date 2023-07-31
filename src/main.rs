@@ -13,15 +13,15 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
-    const IMAGE_HEIGHT: u32 = 512;
+    const IMAGE_HEIGHT: u32 = 256;
     const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
 
-    let origin = Vec3A::new(0.0, 0.0, -1.0);
+    let origin = Vec3A::new(0.0, 0.0, -3.0);
     let direction = Vec3A::new(0.0, 0.0, 1.0);
 
     unsafe {
-        camera = Camera{aspect_ratio: ASPECT_RATIO, width: 2.0 * ASPECT_RATIO,
-            height: 2.0, focal_length: 1.0, ray: Ray{origin: origin, direction: direction}};
+        camera = Camera{aspect_ratio: ASPECT_RATIO, width: 3.0 * ASPECT_RATIO,
+            height: 3.0, focal_length: 1.0, ray: Ray{origin: origin, direction: direction}};
     }
 
     let mut rgb_frame_buffer = ImageBuffer::new(IMAGE_WIDTH as u32, IMAGE_HEIGHT as u32);
@@ -41,8 +41,8 @@ fn main() {
     }
 
     unsafe {
-        render_context = RenderContext{render_target : render_target, scene : scene, spp : 10,
-            max_depth : 5};
+        render_context = RenderContext{render_target : render_target, scene : scene, spp : 5,
+            max_depth : 3};
     }
 
     let renderer = Renderer{};
