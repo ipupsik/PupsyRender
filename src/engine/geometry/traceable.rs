@@ -3,13 +3,14 @@ use std::option::Option;
 use crate::engine::math::ray::{*};
 use crate::engine::material::{*};
 use std::rc::{*};
-use glam::{Vec3A};
+use glam::{Vec2, Vec3A};
 
 pub struct HitResult {
     pub position: Vec3A,
     pub t: f32,
     pub normal: Vec3A,
     pub material: Weak<Material>,
+    pub uv: Vec2,
 }
 
 pub trait Traceable {
@@ -23,6 +24,7 @@ impl HitResult {
             t: f32::MAX,
             normal: Vec3A::new(0.0, 0.0, 0.0),
             material: Weak::new(),
+            uv: Vec2::ZERO,
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::engine::math::ray::{*};
 use crate::engine::geometry::traceable::{*};
-use glam::{Vec3A};
+use glam::{Vec2, Vec3A};
 
 use std::rc::{*};
 
@@ -38,6 +38,6 @@ impl Traceable for Sphere {
             normal = normal * -1.0;
         }
 
-        Some(HitResult{position : position, t : t, normal : normal, material : Weak::new()})
+        Some(HitResult{position : position, t : t, normal : normal, material : Weak::new(), uv: Vec2::ZERO})
     }
 }
