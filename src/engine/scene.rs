@@ -175,5 +175,7 @@ impl Scene {
         let mut mesh : Mesh = Mesh::new(Rc::new(normal_material));
         mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)});
         self.meshes.push(mesh);
+
+        self.load_gltf("example1.gltf");
     }
 }
