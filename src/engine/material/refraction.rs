@@ -18,7 +18,7 @@ pub struct RefractionMaterial {
 }
 
 fn ior(refraction_type: RefractionType, front_face: bool) -> f32 {
-    let mut ior = match refraction_type {
+    let ior = match refraction_type {
         RefractionType::Air => 1.0,
         RefractionType::Glass => 1.3,
         RefractionType::Diamond => 2.4,
@@ -39,16 +39,14 @@ fn refract(ray: &Ray, hit_result: &HitResult, ior: f32) -> Vec3A {
     return r_out_perp + r_out_parallel;
 }
 
-impl Scatter for RefractionMaterial {
+impl Material for RefractionMaterial {
     fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Option<Vec3A> {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
-        let mut direction = refract(ray, hit_result, ior);
+        let direction = refract(ray, hit_result, ior);
         Some(direction.normalize())
     }
-}
 
-impl Sample for RefractionMaterial {
     fn sample(&self, hit_result : &HitResult) -> Vec3A {
         Vec3A::ONE
     }

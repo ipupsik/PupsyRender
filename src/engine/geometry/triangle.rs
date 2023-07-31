@@ -2,7 +2,7 @@ use crate::engine::math::ray::{*};
 use crate::engine::geometry::traceable::{*};
 use crate::engine::geometry::vertex::{*};
 use glam::{Vec2, Vec3A};
-use std::rc::{*};
+use std::sync::{*};
 
 pub struct Triangle {
     pub vertices: [Vertex; 3],
@@ -44,13 +44,13 @@ impl Traceable for Triangle {
         let inv_det = 1.0 / det;
 
         let tvec = ray.origin - self.vertices[0].position;
-        let mut u = tvec.dot(pvec) * inv_det;
+        let u = tvec.dot(pvec) * inv_det;
         if u < 0.0 || u > 1.0 {
             return None;
         }
 
         let qvec = tvec.cross(v0v1);
-        let mut v = ray.direction.dot(qvec) * inv_det;
+        let v = ray.direction.dot(qvec) * inv_det;
         if v < 0.0 || u + v > 1.0 {
             return None;
         }

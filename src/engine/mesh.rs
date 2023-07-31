@@ -9,21 +9,20 @@ use crate::engine::geometry::sphere::{*};
 use crate::engine::geometry::triangle::{*};
 
 use std::rc::{*};
-
-use super::geometry::traceable;
+use std::sync::{Arc};
 
 pub struct Mesh {
-    pub material : Rc<Material>,
+    pub material : Arc<Box<dyn Material>>,
 
-    geometry : Vec<Rc<dyn Traceable>>,
+    geometry : Vec<Arc<dyn Traceable>>,
 }
 
 impl Mesh {
-    pub fn new(material : Rc<Material>) -> Self {
-        Self{material : material, geometry : Vec::new()}
+    pub fn new(material : Arc<Box<dyn Material>>) -> Self {
+        Self{material : material.clone(), geometry : Vec::new()}
     }
 
-    pub fn add_geometry(&mut self, geometry : Rc<dyn Traceable>) {
+    pub fn add_geometry(&mut self, geometry : Arc<dyn Traceable>) {
         self.geometry.push(geometry.clone());
     }
 
@@ -46,8 +45,11 @@ impl Mesh {
             return None;
         }
 
-        min_hit_result.material = Rc::downgrade(&self.material);
+        min_hit_result.material = Arc::downgrade(&self.material);
 
         Some(min_hit_result)
     }
 }
+
+unsafe impl Send for Mesh {}
+unsafe impl Sync for Mesh {}

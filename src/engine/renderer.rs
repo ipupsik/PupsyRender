@@ -4,13 +4,15 @@ use crate::engine::math::ray::{*};
 use glam::{Vec3A};
 use crate::engine::scene::{*};
 use crate::engine::geometry::traceable::HitResult;
-use image::{Rgb};
 use rand::Rng;
 
 use super::material::Material;
 use super::material::diffuse::{*};
 
-use std::rc::{*};
+use std::thread::{self};
+use std::sync::{*};
+
+extern crate num_cpus;
 
 pub struct Renderer {
 
@@ -49,10 +51,10 @@ impl Renderer {
             return (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
         }
 
-        let sample = unsafe {(*min_hit_result.material.as_ptr()).sample.sample(&min_hit_result)};
+        let sample = unsafe {(*min_hit_result.material.as_ptr()).sample(&min_hit_result)};
 
         if depth > 1 {
-            let scatter_option = unsafe {(*min_hit_result.material.as_ptr()).scatter.scatter(ray, &min_hit_result)};
+            let scatter_option = unsafe {(*min_hit_result.material.as_ptr()).scatter(ray, &min_hit_result)};
 
             if scatter_option.is_some() {
                 let scatter_vector = scatter_option.unwrap();
@@ -67,30 +69,75 @@ impl Renderer {
         Vec3A::ZERO
     }
 
-    pub fn render(&self, camera : Camera, render_context : RenderContext) {
-        let mut frame_buffer = render_context.render_target.frame_buffer;
-        for (x, y, pixel) in frame_buffer.enumerate_pixels_mut() {
-            let mut scene_color = Vec3A::new(0.0, 0.0, 0.0);
-            for _ in 0..render_context.spp {
-                let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.width - 1) as f32;
-                let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.height - 1) as f32;
+    pub fn render(&self, camera : &'static Camera, render_context : &'static RenderContext, output_frame_buffer: &mut Vec<Vec<Vec3A>>) {
+        let frame_buffer_len = (render_context.render_target.width * render_context.render_target.height) as usize;
 
-                let ray = camera.get_ray(u, 1.0 - v);
+        let num_cores = num_cpus::get();
+        let chunk_size = frame_buffer_len / num_cores;
 
-                let mut current_sample = Self::sample_scene(&ray, 
-                    &render_context.scene, render_context.max_depth);
+        let mut threads = Vec::with_capacity(num_cores);
 
-                //current_sample = Self::tone_mapping(current_sample);
-                current_sample = Self::gamma_correction(current_sample);    
+        let (tx, rx) =  mpsc::channel();
 
-                current_sample = current_sample * 255.999;
-
-                scene_color = scene_color + current_sample / render_context.spp as f32;
+        let camera = Arc::new(camera.clone());
+        let render_context = Arc::new(render_context.clone());
+        for thr in 0..num_cores
+        {
+            let index_begin = thr * chunk_size;
+            let mut index_end = (thr + 1) * chunk_size;
+            if thr == num_cores - 1
+            {
+                index_end = frame_buffer_len;
             }
-    
-            *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
+
+            output_frame_buffer.push(Vec::new());
+            output_frame_buffer[thr].reserve((index_end - index_begin) as usize);
+
+            let camera = Arc::clone(&camera);
+            let render_context = Arc::clone(&render_context);
+
+            let tx =  tx.clone();
+            threads.push(
+                thread::spawn(move || {
+                    let mut frame_buffer_slice = vec![Vec3A::ZERO; index_end - index_begin];
+                    for i in 0..index_end - index_begin
+                    {
+                        frame_buffer_slice[i] = Vec3A::ONE * 255.99;
+                        let x = (index_begin + i) as u32 % render_context.render_target.width;
+                        let y = (index_begin + i) as u32 / render_context.render_target.width;
+
+                        let mut scene_color = Vec3A::new(0.0, 0.0, 0.0);
+                        for _ in 0..render_context.spp {
+                            let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.width - 1) as f32;
+                            let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.height - 1) as f32;
+            
+                            let ray = camera.get_ray(u, 1.0 - v);
+            
+                            let mut current_sample = Self::sample_scene(&ray, 
+                                &render_context.scene, render_context.max_depth);
+         
+                            scene_color = scene_color + current_sample / render_context.spp as f32;
+                        }
+
+                        //scene_color = Self::tone_mapping(scene_color);
+                        scene_color = Self::gamma_correction(scene_color);  
+                        scene_color = scene_color * 255.999;
+
+                        frame_buffer_slice[i] = scene_color;
+                    }
+                    tx.send((frame_buffer_slice, thr)).unwrap();
+                })
+            );
         }
-    
-        frame_buffer.save("image.png").unwrap();
+
+        for thr in threads
+        {
+            thr.join().unwrap();
+        }
+
+        for v in rx.iter().take(num_cores){
+            let (frame_buffer_slice, thread_index) = v;
+            output_frame_buffer[thread_index].extend(frame_buffer_slice);
+        }
     }
 }

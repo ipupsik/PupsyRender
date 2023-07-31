@@ -14,14 +14,12 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
     eye - 2.0 * (normal.dot(eye)) * normal
 }
 
-impl Scatter for MetalMaterial {
+impl Material for MetalMaterial {
     fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Option<Vec3A> {
-        let mut direction = reflect(ray.direction, hit_result.normal) + (1.0 - self.metalness) * random_in_unit_sphere();
+        let direction = reflect(ray.direction, hit_result.normal) + (1.0 - self.metalness) * random_in_unit_sphere();
         Some(direction.normalize())
     }
-}
 
-impl Sample for MetalMaterial {
     fn sample(&self, hit_result : &HitResult) -> Vec3A {
         Vec3A::ONE
     }

@@ -2,7 +2,7 @@ use crate::engine::math::ray::{*};
 use crate::engine::geometry::traceable::{*};
 use glam::{Vec2, Vec3A};
 
-use std::rc::{*};
+use std::sync::{*};
 
 pub struct Sphere {
     pub radius : f32,
