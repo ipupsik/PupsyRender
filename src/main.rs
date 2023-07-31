@@ -9,7 +9,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
-    const IMAGE_HEIGHT: u32 = 256;
+    const IMAGE_HEIGHT: u32 = 512;
     const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
 
     let origin = Vec3A::new(0.0, 0.0, 0.0);
