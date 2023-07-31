@@ -10,7 +10,7 @@ pub struct DiffuseMaterial {
 }
 
 impl Scatter for DiffuseMaterial {
-    fn scatter(&self, ray: Ray, hit_result : &HitResult) -> Option<Vec3A> {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> Option<Vec3A> {
         let diffuse_position = hit_result.normal + random_in_unit_sphere();
         Some(diffuse_position.normalize())
     }

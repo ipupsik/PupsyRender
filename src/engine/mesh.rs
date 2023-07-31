@@ -27,7 +27,7 @@ impl Mesh {
         self.geometry.push(geometry.clone());
     }
 
-    pub fn hit(&self, ray: Ray) -> Option<HitResult> {
+    pub fn hit(&self, ray: &Ray) -> Option<HitResult> {
         let mut success = false;
         let mut min_hit_result = HitResult::new();
 

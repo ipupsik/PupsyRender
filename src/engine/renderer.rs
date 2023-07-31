@@ -28,7 +28,7 @@ impl Renderer {
        input / (Vec3A::ONE + input)
     }
 
-    fn sample_scene(ray : Ray, scene : &Scene, depth : u64) -> Vec3A {
+    fn sample_scene(ray : &Ray, scene : &Scene, depth : u64) -> Vec3A {
         let mut success = false;
         let mut min_hit_result = HitResult::new();
 
@@ -59,7 +59,7 @@ impl Renderer {
 
                 let new_ray = Ray{origin : min_hit_result.position, direction : scatter_vector};
                 if depth > 1 {
-                    return 0.8 * Self::sample_scene(new_ray, scene, depth - 1) * sample;
+                    return 0.8 * Self::sample_scene(&new_ray, scene, depth - 1) * sample;
                 }
             }
         }
@@ -77,7 +77,7 @@ impl Renderer {
 
                 let ray = camera.get_ray(u, 1.0 - v);
 
-                let mut current_sample = Self::sample_scene(ray, 
+                let mut current_sample = Self::sample_scene(&ray, 
                     &render_context.scene, render_context.max_depth);
 
                 //current_sample = Self::tone_mapping(current_sample);

@@ -1,6 +1,7 @@
 pub mod diffuse;
 pub mod metal;
 pub mod normal;
+pub mod refraction;
 
 use crate::engine::math::ray::{*};
 use glam::{Vec3A};
@@ -20,7 +21,7 @@ impl Material {
 }
 
 pub trait Scatter {
-    fn scatter(&self, ray: Ray, hit_result : &HitResult) -> Option<Vec3A>;
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> Option<Vec3A>;
 }
 
 pub trait Sample {

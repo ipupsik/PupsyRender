@@ -6,6 +6,7 @@ use crate::engine::material::{*};
 use crate::engine::material::diffuse::{*};
 use crate::engine::material::metal::{*};
 use crate::engine::material::normal::{*};
+use crate::engine::material::refraction::{*};
 
 use super::geometry::sphere::{*};
 use super::geometry::triangle::{*};
@@ -168,6 +169,15 @@ impl Scene {
         };
         let rc_normal_material = Rc::new(normal_material);
 
+        let refraction_material_data = Rc::new(
+            RefractionMaterial{refraction_type: RefractionType::Glass}
+        );
+        let refraction_material = Material{
+            scatter : refraction_material_data.clone(),
+            sample: refraction_material_data.clone()
+        };
+        let rc_refraction_material = Rc::new(refraction_material);
+
         let mut mesh : Mesh = Mesh::new(rc_diffuse_material.clone());
         mesh.add_geometry(Rc::new(Sphere{radius : 0.5, position : Vec3A::new(0.0, 0.0, 1.2)}));
         mesh.add_geometry(Rc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)}));
@@ -179,6 +189,10 @@ impl Scene {
 
         let mut mesh : Mesh = Mesh::new(rc_normal_material.clone());
         mesh.add_geometry(Rc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
+        self.meshes.push(mesh);
+
+        let mut mesh : Mesh = Mesh::new(rc_refraction_material.clone());
+        mesh.add_geometry(Rc::new(Sphere{radius : 0.4, position : Vec3A::new(-0.5, 0.3, 0.7)}));
         self.meshes.push(mesh);
 
         self.load_gltf("example1.gltf");

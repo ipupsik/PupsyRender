@@ -11,10 +11,11 @@ pub struct HitResult {
     pub normal: Vec3A,
     pub material: Weak<Material>,
     pub uv: Vec2,
+    pub front_face: bool
 }
 
 pub trait Traceable {
-    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
 }
 
 impl HitResult {
@@ -25,6 +26,7 @@ impl HitResult {
             normal: Vec3A::new(0.0, 0.0, 0.0),
             material: Weak::new(),
             uv: Vec2::ZERO,
+            front_face: true,
         }
     }
 }

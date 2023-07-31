@@ -14,7 +14,7 @@ impl Sphere {
 }
 
 impl Traceable for Sphere {
-    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let oc: Vec3A = ray.origin - self.position;
         let a: f32 = ray.direction.dot(ray.direction);
         let half_b: f32 = oc.dot(ray.direction);
@@ -33,11 +33,14 @@ impl Traceable for Sphere {
             }
         }
         let position = ray.at(t);
+        let mut front_face = true;
         let mut normal = (position - self.position) / self.radius;
         if normal.dot(ray.direction) > 0.0 {
             normal = normal * -1.0;
+            front_face = false;
         }
 
-        Some(HitResult{position : position, t : t, normal : normal, material : Weak::new(), uv: Vec2::ZERO})
+        Some(HitResult{position : position, t : t, normal : normal, material : Weak::new(), 
+            uv: Vec2::ZERO, front_face: front_face})
     }
 }

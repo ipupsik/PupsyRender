@@ -27,7 +27,7 @@ impl Triangle {
 }
 
 impl Traceable for Triangle {
-    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let v0v1 = self.vertices[1].position - self.vertices[0].position;
         let v0v2 = self.vertices[2].position - self.vertices[0].position;
         let pvec = ray.direction.cross(v0v2);
@@ -38,6 +38,9 @@ impl Traceable for Triangle {
         if det.abs() < Triangle::EPSILON {
             return None;
         }
+
+        let front_face = det < Triangle::EPSILON;
+
         let inv_det = 1.0 / det;
 
         let tvec = ray.origin - self.vertices[0].position;
@@ -57,6 +60,7 @@ impl Traceable for Triangle {
             return None;
         }
         
-        return Some(HitResult { position: ray.at(t), t: t, normal: self.normal, material: Weak::new(), uv: Vec2::new(u, v) });
+        return Some(HitResult { position: ray.at(t), t: t, normal: self.normal, material: Weak::new(), 
+            uv: Vec2::new(u, v), front_face: front_face });
     }
 }
