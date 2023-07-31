@@ -13,10 +13,10 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
-    const IMAGE_HEIGHT: u32 = 256;
+    const IMAGE_HEIGHT: u32 = 512;
     const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
 
-    let origin = Vec3A::new(0.0, 0.0, -3.0);
+    let origin = Vec3A::new(0.0, 0.0, -2.0);
     let direction = Vec3A::new(0.0, 0.0, 1.0);
 
     unsafe {
@@ -41,8 +41,8 @@ fn main() {
     }
 
     unsafe {
-        render_context = RenderContext{render_target : render_target, scene : scene, spp : 5,
-            max_depth : 3};
+        render_context = RenderContext{render_target : render_target, scene : scene, spp : 100,
+            max_depth : 50};
     }
 
     let renderer = Renderer{};
