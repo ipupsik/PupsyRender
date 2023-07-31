@@ -55,12 +55,14 @@ impl Scene {
         if mesh_option.is_some() {
             let gltf_mesh = mesh_option.unwrap();
 
-            let diffuse_material_data = DiffuseMaterial{};
+            let diffuse_material_data = Rc::new(DiffuseMaterial{});
             let diffuse_material = Material{
-                scatter : Rc::new(diffuse_material_data),
-                sample: Rc::new(diffuse_material_data)
+                scatter : diffuse_material_data.clone(),
+                sample: diffuse_material_data.clone()
             };
-            let mut mesh : Mesh = Mesh::new(Rc::new(diffuse_material));
+            let rc_diffuse_material = Rc::new(diffuse_material);
+
+            let mut mesh : Mesh = Mesh::new(rc_diffuse_material.clone());
 
             for primitive in gltf_mesh.primitives() {
                 for attribute in primitive.attributes() {
@@ -94,7 +96,7 @@ impl Scene {
                                     let vertex2 = Vertex::new(pos2);
                                     let vertex3 = Vertex::new(pos3);
 
-                                    mesh.add_triangle(Triangle::new(vertex1, vertex2, vertex3));
+                                    mesh.add_geometry(Rc::new(Triangle::new(vertex1, vertex2, vertex3)));
 
                                     buffer_pos += stride;
                                 }
@@ -145,37 +147,44 @@ impl Scene {
     }
 
     pub fn load_debug(&mut self) {
-        let diffuse_material_data = DiffuseMaterial{};
+        let diffuse_material_data = Rc::new(DiffuseMaterial{});
         let diffuse_material = Material{
-            scatter : Rc::new(diffuse_material_data),
-            sample: Rc::new(diffuse_material_data)
+            scatter : diffuse_material_data.clone(),
+            sample: diffuse_material_data.clone()
         };
+        let rc_diffuse_material = Rc::new(diffuse_material);
 
-        let metal_material_data = MetalMaterial{metalness : 0.3};
+        let metal_material_data = Rc::new(MetalMaterial{metalness : 0.3});
         let metal_material = Material{
-            scatter : Rc::new(metal_material_data),
-            sample: Rc::new(metal_material_data)
+            scatter : metal_material_data.clone(),
+            sample: metal_material_data.clone()
         };
+        let rc_metal_material = Rc::new(metal_material);
 
-        let normal_material_data = NormalMaterial{};
+        let normal_material_data = Rc::new(NormalMaterial{});
         let normal_material = Material{
-            scatter : Rc::new(normal_material_data),
-            sample: Rc::new(normal_material_data)
+            scatter : normal_material_data.clone(),
+            sample: normal_material_data.clone()
         };
+        let rc_normal_material = Rc::new(normal_material);
 
-        let mut mesh : Mesh = Mesh::new(Rc::new(diffuse_material));
-        mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(0.0, 0.0, 1.2)});
-        mesh.add_sphere(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)});
+        let mut mesh : Mesh = Mesh::new(rc_diffuse_material.clone());
+        mesh.add_geometry(Rc::new(Sphere{radius : 0.5, position : Vec3A::new(0.0, 0.0, 1.2)}));
+        mesh.add_geometry(Rc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)}));
         self.meshes.push(mesh);
         
-        let mut mesh : Mesh = Mesh::new(Rc::new(metal_material));
-        mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)});
+        let mut mesh : Mesh = Mesh::new(rc_metal_material.clone());
+        mesh.add_geometry(Rc::new(Sphere{radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         self.meshes.push(mesh);
 
-        let mut mesh : Mesh = Mesh::new(Rc::new(normal_material));
-        mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)});
+        let mut mesh : Mesh = Mesh::new(rc_normal_material.clone());
+        mesh.add_geometry(Rc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
         self.meshes.push(mesh);
 
         self.load_gltf("example1.gltf");
+
+        let mut mesh : Mesh = Mesh::new(rc_normal_material.clone());
+        mesh.add_geometry(Rc::new(Triangle::DEFAULT));
+        self.meshes.push(mesh);
     }
 }

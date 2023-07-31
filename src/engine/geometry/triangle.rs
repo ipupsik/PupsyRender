@@ -12,12 +12,18 @@ pub struct Triangle {
 impl Triangle {
     pub const EPSILON: f32 = 1e-8;
     
-    pub fn new(v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self{
+    pub const fn new(v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self{
         Self {
             vertices : [v1, v2, v3],
             normal: Vec3A::ZERO
         }
     }
+
+    pub const DEFAULT: Self = Self::new(
+        Vertex::new(Vec3A::new(-0.4, -0.2, 0.45)),
+        Vertex::new(Vec3A::new(0.0, 0.0, 0.45)),
+        Vertex::new(Vec3A::new(0.4, -0.2, 0.45))
+    );
 }
 
 impl Traceable for Triangle {

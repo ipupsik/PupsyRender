@@ -10,31 +10,28 @@ use crate::engine::geometry::triangle::{*};
 
 use std::rc::{*};
 
-pub struct Mesh {
-    material : Rc<Material>,
+use super::geometry::traceable;
 
-    spheres : Vec<Sphere>,
-    triangles : Vec<Triangle>,
+pub struct Mesh {
+    pub material : Rc<Material>,
+
+    geometry : Vec<Rc<dyn Traceable>>,
 }
 
 impl Mesh {
     pub fn new(material : Rc<Material>) -> Self {
-        Self{material : material, spheres : Vec::new(), triangles : Vec::new()}
+        Self{material : material, geometry : Vec::new()}
     }
 
-    pub fn add_sphere(&mut self, sphere : Sphere) {
-        self.spheres.push(sphere);
-    }
-
-    pub fn add_triangle(&mut self, triangle : Triangle) {
-        self.triangles.push(triangle);
+    pub fn add_geometry(&mut self, geometry : Rc<dyn Traceable>) {
+        self.geometry.push(geometry.clone());
     }
 
     pub fn hit(&self, ray: Ray) -> Option<HitResult> {
         let mut success = false;
         let mut min_hit_result = HitResult::new();
 
-        for traceable in self.spheres.iter() {
+        for traceable in self.geometry.iter() {
             let hit_option: Option<HitResult> = traceable.hit(ray, 0.001, f32::MAX);
             if hit_option.is_some() {
                 let hit_result = hit_option.unwrap();
