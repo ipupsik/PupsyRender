@@ -37,6 +37,14 @@ impl Scene {
         }
     }
 
+    fn decode_vec3(buffer : &Vec<u8>, offset : usize) -> Vec3A {
+        Vec3A::new(
+            f32::from_be_bytes(buffer[offset..offset + 4].try_into().expect("Invalid [1] x coord")),
+            f32::from_be_bytes(buffer[offset + 4..offset + 4 * 2].try_into().expect("Invalid [1] y coord")),
+            f32::from_be_bytes(buffer[offset + 4 * 2..offset + 4 * 3].try_into().expect("Invalid [1] z coord"))
+        )
+    }
+
     fn load_gltf_node(&mut self, context : &GLTFContext, node: &gltf::Node, matrix: &Mat4) {
         let node_transform_matrix = node.transform().matrix();
 
@@ -68,25 +76,15 @@ impl Scene {
                                 let mut buffer_pos = 0;
                                 while buffer_pos < buffer_view.length() {
                                     let mut pos_raw_data_pos = buffer_view.offset() + buffer_pos;
-                                    let pos_raw_data: [u8; 4 * 3 * 3] = buffer[pos_raw_data_pos..pos_raw_data_pos + 4 * 3 * 3].try_into().expect("Degenerate triangle");
 
                                     let pos1_offset = 0;
-                                    let mut pos1 = Vec3A::ZERO;
-                                    pos1.x = f32::from_be_bytes(pos_raw_data[pos1_offset..pos1_offset + 4].try_into().expect("Invalid [1] x coord"));
-                                    pos1.y = f32::from_be_bytes(pos_raw_data[pos1_offset + 4..pos1_offset + 4 * 2].try_into().expect("Invalid [1] y coord"));
-                                    pos1.z = f32::from_be_bytes(pos_raw_data[pos1_offset + 4 * 2..pos1_offset + 4 * 3].try_into().expect("Invalid [1] z coord"));
+                                    let pos1 = Self::decode_vec3(buffer, pos_raw_data_pos + pos1_offset);
 
                                     let pos2_offset = pos1_offset + 4 * 3;
-                                    let mut pos2 = Vec3A::ZERO;
-                                    pos2.x = f32::from_be_bytes(pos_raw_data[pos2_offset..pos2_offset + 4].try_into().expect("Invalid [2] x coord"));
-                                    pos2.y = f32::from_be_bytes(pos_raw_data[pos2_offset + 4..pos2_offset + 4 * 2].try_into().expect("Invalid [2] y coord"));
-                                    pos2.z = f32::from_be_bytes(pos_raw_data[pos2_offset + 4 * 2..pos2_offset + 4 * 3].try_into().expect("Invalid [2] z coord"));
+                                    let pos2 = Self::decode_vec3(buffer, pos_raw_data_pos + pos2_offset);
 
                                     let pos3_offset = pos2_offset + 4 * 3;
-                                    let mut pos3 = Vec3A::ZERO;
-                                    pos3.x = f32::from_be_bytes(pos_raw_data[pos3_offset..pos3_offset + 4].try_into().expect("Invalid [3] x coord"));
-                                    pos3.y = f32::from_be_bytes(pos_raw_data[pos3_offset + 4..pos3_offset + 4 * 2].try_into().expect("Invalid [3] y coord"));
-                                    pos3.z = f32::from_be_bytes(pos_raw_data[pos3_offset + 4 * 2..pos3_offset + 4 * 3].try_into().expect("Invalid [3] z coord"));
+                                    let pos3 = Self::decode_vec3(buffer, pos_raw_data_pos + pos3_offset);
 
                                     let vertex1 = Vertex::new(pos1);
                                     let vertex2 = Vertex::new(pos2);
