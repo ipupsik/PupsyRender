@@ -154,7 +154,7 @@ impl Scene {
         };
         let rc_diffuse_material = Rc::new(diffuse_material);
 
-        let metal_material_data = Rc::new(MetalMaterial{metalness : 0.3});
+        let metal_material_data = Rc::new(MetalMaterial{metalness : 0.9});
         let metal_material = Material{
             scatter : metal_material_data.clone(),
             sample: metal_material_data.clone()

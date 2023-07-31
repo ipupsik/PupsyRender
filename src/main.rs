@@ -12,7 +12,7 @@ fn main() {
     const IMAGE_HEIGHT: u32 = 512;
     const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
 
-    let origin = Vec3A::new(0.0, 0.0, 0.0);
+    let origin = Vec3A::new(0.0, 0.0, -1.0);
     let direction = Vec3A::new(0.0, 0.0, 1.0);
 
     let camera = Camera{aspect_ratio: ASPECT_RATIO, width: 2.0 * ASPECT_RATIO,
@@ -30,8 +30,8 @@ fn main() {
         }
     }
 
-    let render_context = RenderContext{render_target : render_target, scene : scene, spp : 100,
-        max_depth : 50};
+    let render_context = RenderContext{render_target : render_target, scene : scene, spp : 10,
+        max_depth : 5};
 
     let renderer = Renderer{};
 
