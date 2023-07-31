@@ -71,7 +71,7 @@ impl Scene {
                             let buffer_view_option = attribute.1.view();
                             if buffer_view_option.is_some() {
                                 let buffer_view = buffer_view_option.unwrap();
-                                let buffer = &context.decoded_buffers[buffer_view.index()];
+                                let buffer = &context.decoded_buffers[buffer_view.buffer().index()];
                                 
                                 let size = data_type.multiplicity() * raw_type.size();
 
@@ -81,14 +81,9 @@ impl Scene {
                                 while buffer_pos < buffer_view.length() {
                                     let pos_raw_data_pos = buffer_view.offset() + buffer_pos;
 
-                                    let pos1_offset = 0;
-                                    let pos1 = Self::decode_vec3(buffer, pos_raw_data_pos + pos1_offset);
-
-                                    let pos2_offset = pos1_offset + 4 * 3;
-                                    let pos2 = Self::decode_vec3(buffer, pos_raw_data_pos + pos2_offset);
-
-                                    let pos3_offset = pos2_offset + 4 * 3;
-                                    let pos3 = Self::decode_vec3(buffer, pos_raw_data_pos + pos3_offset);
+                                    let pos1 = Self::decode_vec3(buffer, pos_raw_data_pos);
+                                    let pos2 = Self::decode_vec3(buffer, pos_raw_data_pos + stride);
+                                    let pos3 = Self::decode_vec3(buffer, pos_raw_data_pos + stride * 2);
 
                                     let vertex1 = Vertex::new(pos1, Vec2::ZERO);
                                     let vertex2 = Vertex::new(pos2, Vec2::ZERO);
@@ -96,7 +91,7 @@ impl Scene {
 
                                     mesh.add_geometry(Arc::new(Triangle::new(vertex1, vertex2, vertex3)));
 
-                                    buffer_pos += stride;
+                                    buffer_pos += stride * 3;
                                 }
                             }
                         },
