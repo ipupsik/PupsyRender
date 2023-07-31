@@ -7,3 +7,5 @@ pub mod render_target;
 pub mod renderer;
 pub mod scene;
 pub mod material;
+pub mod texture;
+pub mod sampler;
