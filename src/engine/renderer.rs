@@ -49,14 +49,22 @@ impl Renderer {
             return (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
         }
 
-        if depth > 1 {
-            let scatter_vector = unsafe {(*min_hit_result.material.as_ptr()).scatter.scatter(ray, &min_hit_result)};
+        let sample = unsafe {(*min_hit_result.material.as_ptr()).sample.sample(&min_hit_result)};
 
-            let new_ray = Ray{origin : min_hit_result.position, direction : scatter_vector};
-            return Self::sample_scene(new_ray, scene, depth - 1) * 0.8;
+        if depth > 1 {
+            let scatter_option = unsafe {(*min_hit_result.material.as_ptr()).scatter.scatter(ray, &min_hit_result)};
+
+            if scatter_option.is_some() {
+                let scatter_vector = scatter_option.unwrap();
+
+                let new_ray = Ray{origin : min_hit_result.position, direction : scatter_vector};
+                if depth > 1 {
+                    return 0.8 * Self::sample_scene(new_ray, scene, depth - 1) * sample;
+                }
+            }
         }
 
-        Vec3A::new(0.0, 0.0, 0.0)
+        Vec3A::ZERO
     }
 
     pub fn render(&self, camera : Camera, render_context : RenderContext) {

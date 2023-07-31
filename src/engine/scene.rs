@@ -5,6 +5,7 @@ use gltf::json::camera::Type;
 use crate::engine::material::{*};
 use crate::engine::material::diffuse::{*};
 use crate::engine::material::metal::{*};
+use crate::engine::material::normal::{*};
 
 use super::geometry::sphere::{*};
 use super::geometry::triangle::{*};
@@ -55,7 +56,10 @@ impl Scene {
             let gltf_mesh = mesh_option.unwrap();
 
             let diffuse_material_data = DiffuseMaterial{};
-            let diffuse_material = Material{scatter : Rc::new(diffuse_material_data)};
+            let diffuse_material = Material{
+                scatter : Rc::new(diffuse_material_data),
+                sample: Rc::new(diffuse_material_data)
+            };
             let mut mesh : Mesh = Mesh::new(Rc::new(diffuse_material));
 
             for primitive in gltf_mesh.primitives() {
@@ -142,18 +146,33 @@ impl Scene {
 
     pub fn load_debug(&mut self) {
         let diffuse_material_data = DiffuseMaterial{};
-        let diffuse_material = Material{scatter : Rc::new(diffuse_material_data)};
+        let diffuse_material = Material{
+            scatter : Rc::new(diffuse_material_data),
+            sample: Rc::new(diffuse_material_data)
+        };
+
+        let metal_material_data = MetalMaterial{metalness : 0.3};
+        let metal_material = Material{
+            scatter : Rc::new(metal_material_data),
+            sample: Rc::new(metal_material_data)
+        };
+
+        let normal_material_data = NormalMaterial{};
+        let normal_material = Material{
+            scatter : Rc::new(normal_material_data),
+            sample: Rc::new(normal_material_data)
+        };
 
         let mut mesh : Mesh = Mesh::new(Rc::new(diffuse_material));
         mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(0.0, 0.0, 1.2)});
         mesh.add_sphere(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)});
         self.meshes.push(mesh);
-
-        let metal_material_data = MetalMaterial{metalness : 0.3};
-        let metal_material = Material{scatter : Rc::new(metal_material_data)};
         
         let mut mesh : Mesh = Mesh::new(Rc::new(metal_material));
         mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)});
+        self.meshes.push(mesh);
+
+        let mut mesh : Mesh = Mesh::new(Rc::new(normal_material));
         mesh.add_sphere(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)});
         self.meshes.push(mesh);
     }
