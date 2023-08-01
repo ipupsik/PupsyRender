@@ -18,12 +18,6 @@ impl Triangle {
             normal: Vec3A::ZERO
         }
     }
-
-    pub const DEFAULT: Self = Self::new(
-        Vertex::new(Vec3A::new(-0.4, -0.2, 0.45), Vec2::new(0.0, 0.0)),
-        Vertex::new(Vec3A::new(0.0, 0.0, 0.45), Vec2::new(1.0, 0.0)),
-        Vertex::new(Vec3A::new(0.4, -0.2, 0.45), Vec2::new(0.0, 1.0))
-    );
 }
 
 impl Traceable for Triangle {
