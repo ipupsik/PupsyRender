@@ -1,6 +1,7 @@
 use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use glam::{Vec2, Vec3A};
+use crate::engine::bvh::aabb::*;
 
 use std::sync::*;
 
@@ -42,5 +43,12 @@ impl Traceable for Sphere {
 
         Some(HitResult{position : position, t : t, normal : normal, 
             uv: Vec2::ZERO, front_face: front_face})
+    }
+
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
+            self.position - Vec3A::new(self.radius, self.radius, self.radius),
+            self.position + Vec3A::new(self.radius, self.radius, self.radius)
+        )
     }
 }

@@ -2,6 +2,7 @@ use std::vec;
 use crate::engine::mesh::Mesh;
 use glam::{Vec2, Vec3A, Vec4, Mat4};
 use gltf::json::camera::Type;
+use image::GenericImageView;
 use crate::engine::material::*;
 use crate::engine::material::diffuse::*;
 use crate::engine::material::metal::*;
@@ -11,6 +12,7 @@ use crate::engine::material::pbr::*;
 use crate::engine::material::pbr_metallic_roughness::*;
 use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
+use crate::engine::texture::*;
 
 use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;
@@ -31,13 +33,13 @@ use std::fs;
 pub struct Scene {
     pub meshes: Vec<Arc<Mesh>>,
     pub materials: Vec<Arc<dyn Material>>,
-    pub textures: Vec<Arc<Texture2D>>,
+    pub textures: Vec<Arc<Texture>>,
     //pub octree: Arc<Octree>,
 }
 
 struct GLTFContext {
     pub decoded_buffers : Vec<Vec<u8>>,
-    pub decoded_images : Vec<Vec<u8>>,
+    pub decoded_images : Vec<Texture>,
 }
 
 impl GLTFContext {
@@ -144,7 +146,7 @@ impl Scene {
         if pbr_base_color_texture_option.is_some() {
             let pbr_base_color_texture = pbr_base_color_texture_option.unwrap();
             let image = &context.decoded_images[pbr_base_color_texture.texture().index()];
-            pbr_material.pbr_metallic_roughness.base_color_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+            pbr_material.pbr_metallic_roughness.base_color_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let pbr_base_color_factor = pbr_metallic_roughness.base_color_factor();
         pbr_material.pbr_metallic_roughness.base_color_factor = Vec4::from(pbr_base_color_factor);
@@ -153,7 +155,7 @@ impl Scene {
         if pbr_metalic_roughness_texture_option.is_some() {
             let pbr_metalic_roughness_texture = pbr_metalic_roughness_texture_option.unwrap();
             let image = &context.decoded_images[pbr_metalic_roughness_texture.texture().index()];
-            pbr_material.pbr_metallic_roughness.metalic_roughness_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+            pbr_material.pbr_metallic_roughness.metalic_roughness_texture = Arc::new(Texture2D::new(image.clone()));
         }
 
         pbr_material.pbr_metallic_roughness.metalic_factor = pbr_metallic_roughness.metallic_factor();
@@ -163,19 +165,19 @@ impl Scene {
         if normal_texture_option.is_some() {
             let normal_texture = normal_texture_option.unwrap();
             let image = &context.decoded_images[normal_texture.texture().index()];
-            pbr_material.normal_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+            pbr_material.normal_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let occlusion_texture_option = material.occlusion_texture();
         if occlusion_texture_option.is_some() {
             let occlusion_texture = occlusion_texture_option.unwrap();
             let image = &context.decoded_images[occlusion_texture.texture().index()];
-            pbr_material.occlusion_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+            pbr_material.occlusion_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let emissive_texture_option = material.emissive_texture();
         if emissive_texture_option.is_some() {
             let emissive_texture = emissive_texture_option.unwrap();
             let image = &context.decoded_images[emissive_texture.texture().index()];
-            pbr_material.emissive_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+            pbr_material.emissive_texture = Arc::new(Texture2D::new(image.clone()));
         }
         pbr_material.emissive_factor = Vec3A::from(material.emissive_factor());
 
@@ -387,7 +389,7 @@ impl Scene {
             }
         }
 
-        context.decoded_images.resize(gltf.images().count(), Vec::new());
+        context.decoded_images.resize(gltf.images().count(), Texture::new(0, 0, Arc::new(Vec::new())));
         for image in gltf.images() {
             let mut image_raw_data = Vec::new();
 
@@ -407,7 +409,11 @@ impl Scene {
                 Ok(value) => {
                     match value.decode() {
                         Ok(value) => {
-                            context.decoded_images[image.index()] = value.into_bytes();
+                            context.decoded_images[image.index()] = Texture::new(
+                                value.width(),
+                                value.height(),
+                                Arc::new(value.into_bytes())
+                            );
                         },
                         Err(error) => {
                             println!("Failed to decode image; {}", error.to_string());

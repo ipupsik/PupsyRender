@@ -3,10 +3,12 @@ use std::option::Option;
 use crate::engine::math::ray::*;
 use crate::engine::material::*;
 use std::sync::*;
+use crate::engine::bvh::aabb::*;
 use glam::{Vec2, Vec3A};
 
 pub trait Traceable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
+    fn bounding_box(&self) -> AABB;
 }
 
 pub struct HitResult {

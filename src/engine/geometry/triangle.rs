@@ -2,6 +2,7 @@ use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use crate::engine::geometry::vertex::*;
 use glam::{Vec2, Vec3A};
+use crate::engine::bvh::aabb::*;
 use std::sync::*;
 
 pub struct Triangle {
@@ -59,5 +60,12 @@ impl Traceable for Triangle {
 
         return Some(HitResult { position: ray.at(t), t: t, normal: normal, 
             uv: uv, front_face: front_face });
+    }
+
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
+            self.vertices[0].position.min(self.vertices[1].position.min(self.vertices[2].position)),
+            self.vertices[0].position.max(self.vertices[1].position.max(self.vertices[2].position)),
+        )
     }
 }
