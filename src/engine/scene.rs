@@ -186,22 +186,25 @@ impl Scene {
                             let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
                             match attribute.0 {
                                 gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                                    let decoded_vector = Self::decode_triangle_vec3_indexed(
+                                    let mut decoded_triangle = Self::decode_triangle_vec3_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
+
+                                    decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 0.0)))));
+
                                     match attribute.0 {
-                                        gltf::Semantic::Positions => positions.push(decoded_vector),
-                                        gltf::Semantic::Normals => normals.push(decoded_vector),
+                                        gltf::Semantic::Positions => positions.push(decoded_triangle),
+                                        gltf::Semantic::Normals => normals.push(decoded_triangle),
                                         _ => println!("Invalid attribute"),
                                     };
                                 },
                                 gltf::Semantic::TexCoords(set) => {
-                                    let decoded_vector = Self::decode_triangle_vec2_indexed(
+                                    let decoded_triangle = Self::decode_triangle_vec2_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
-                                    uvs.push(decoded_vector);
+                                    uvs.push(decoded_triangle);
                                 },
                                 _ => {
                                     println!("Unhandled attribute");
@@ -232,22 +235,26 @@ impl Scene {
                                 let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
                                 match attribute.0 {
                                     gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                                        let decoded_vector = Self::decode_triangle_vec3_indexed(
+                                        let mut decoded_triangle = Self::decode_triangle_vec3_indexed(
                                             buffer, buffer_view.offset(), stride, raw_type.size(),
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
+
+                                        decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 0.0)))));
+
                                         match attribute.0 {
-                                            gltf::Semantic::Positions => positions.push(decoded_vector),
-                                            gltf::Semantic::Normals => normals.push(decoded_vector),
+                                            gltf::Semantic::Positions => positions.push(decoded_triangle),
+                                            gltf::Semantic::Normals => normals.push(decoded_triangle),
                                             _ => println!("Invalid attribute"),
                                         };
                                     },
                                     gltf::Semantic::TexCoords(set) => {
-                                        let decoded_vector = Self::decode_triangle_vec2_indexed(
+                                        let decoded_triangle = Self::decode_triangle_vec2_indexed(
                                             buffer, buffer_view.offset(), stride, raw_type.size(),
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
-                                        uvs.push(decoded_vector);
+
+                                        uvs.push(decoded_triangle);
                                     },
                                     _ => {
                                         println!("Unhandled attribute");
@@ -264,20 +271,23 @@ impl Scene {
 
                                 match attribute.0 {
                                     gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                                        let decoded_vector =  Self::decode_triangle_vec3(
+                                        let mut decoded_triangle =  Self::decode_triangle_vec3(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
+
+                                        decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 0.0)))));
+
                                         match attribute.0 {
-                                            gltf::Semantic::Positions => positions.push(decoded_vector),
-                                            gltf::Semantic::Normals => normals.push(decoded_vector),
+                                            gltf::Semantic::Positions => positions.push(decoded_triangle),
+                                            gltf::Semantic::Normals => normals.push(decoded_triangle),
                                             _ => println!("Invalid attribute"),
                                         };
                                     },
                                     gltf::Semantic::TexCoords(set) => {
-                                        let decoded_vector = Self::decode_triangle_vec2(
+                                        let decoded_triangle = Self::decode_triangle_vec2(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
-                                        uvs.push(decoded_vector);
+                                        uvs.push(decoded_triangle);
                                     },
                                     _ => {
                                         println!("Unhandled attribute");
@@ -370,7 +380,7 @@ impl Scene {
 
         let mut mesh : Mesh = Mesh::new(diffuse_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(1.7, 0.0, 0.6)}));
-        mesh.add_geometry(Arc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -100.5, 1.0)}));
+        mesh.add_geometry(Arc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         self.meshes.push(mesh);
         
         let mut mesh : Mesh = Mesh::new(metal_material.clone());
@@ -392,7 +402,8 @@ impl Scene {
         self.materials.push(uv_material);
 
         // gltf
-        self.load_gltf("example1.gltf");
+        //self.load_gltf("example1.gltf");
+        self.load_gltf("example2.gltf");
     }
 }
 
