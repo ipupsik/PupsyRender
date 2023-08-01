@@ -203,7 +203,10 @@ impl Scene {
                                     );
                                     uvs.push(decoded_vector);
                                 },
-                                _ => println!("Invalid attribute"),
+                                _ => {
+                                    println!("Unhandled attribute");
+                                    break;
+                                },
                             };
 
                             indices_buffer_pos += indices_stride * 3;
@@ -246,7 +249,10 @@ impl Scene {
                                         );
                                         uvs.push(decoded_vector);
                                     },
-                                    _ => println!("Invalid attribute"),
+                                    _ => {
+                                        println!("Unhandled attribute");
+                                        break;
+                                    },
                                 };
 
                                 indices_buffer_pos += indices_stride * 3;
@@ -273,7 +279,10 @@ impl Scene {
                                         );
                                         uvs.push(decoded_vector);
                                     },
-                                    _ => println!("Invalid attribute"),
+                                    _ => {
+                                        println!("Unhandled attribute");
+                                        break;
+                                    },
                                 }                                     
 
                                 buffer_pos += stride * 3;
