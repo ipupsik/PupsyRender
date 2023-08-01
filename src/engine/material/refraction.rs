@@ -2,7 +2,7 @@ use crate::engine::material::*;
 
 use crate::engine::geometry::traceable::*;
 use crate::engine::math::ray::*;
-use crate::engine::math::utils::{*};
+use crate::engine::math::utils::*;
 use glam::{Vec3A};
 
 #[derive(Copy, Clone)]
@@ -12,7 +12,6 @@ pub enum RefractionType {
     Diamond,
 }
 
-#[derive(Copy, Clone)]
 pub struct RefractionMaterial {
     pub refraction_type: RefractionType,
 }

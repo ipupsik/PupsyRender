@@ -1,8 +1,8 @@
-use crate::engine::math::ray::{*};
-use crate::engine::geometry::traceable::{*};
-use crate::engine::geometry::vertex::{*};
+use crate::engine::math::ray::*;
+use crate::engine::geometry::traceable::*;
+use crate::engine::geometry::vertex::*;
 use glam::{Vec2, Vec3A};
-use std::sync::{*};
+use std::sync::*;
 
 pub struct Triangle {
     pub vertices: [Vertex; 3],

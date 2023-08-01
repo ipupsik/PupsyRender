@@ -1,5 +1,5 @@
-use crate::engine::render_target::{*};
-use crate::engine::scene::{*};
+use crate::engine::render_target::*;
+use crate::engine::scene::*;
 use rand::rngs::ThreadRng;
 
 pub struct RenderContext {

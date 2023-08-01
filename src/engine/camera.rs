@@ -1,4 +1,4 @@
-use crate::engine::math::ray::{*};
+use crate::engine::math::ray::*;
 use glam::{Vec3A};
 
 pub struct Camera {

@@ -1,16 +1,16 @@
-use crate::engine::camera::{*};
-use crate::engine::render_context::{*};
-use crate::engine::math::ray::{*};
+use crate::engine::camera::*;
+use crate::engine::render_context::*;
+use crate::engine::math::ray::*;
 use glam::{Vec3A};
-use crate::engine::scene::{*};
+use crate::engine::scene::*;
 use crate::engine::geometry::traceable::HitResult;
 use rand::Rng;
 
 use super::material::Material;
-use super::material::diffuse::{*};
+use super::material::diffuse::*;
 
 use std::thread::{self};
-use std::sync::{*};
+use std::sync::*;
 
 extern crate num_cpus;
 

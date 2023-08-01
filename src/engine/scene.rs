@@ -2,22 +2,28 @@ use std::vec;
 use crate::engine::mesh::Mesh;
 use glam::{Vec2, Vec3A, Vec4, Mat4};
 use gltf::json::camera::Type;
-use crate::engine::material::{*};
-use crate::engine::material::diffuse::{*};
-use crate::engine::material::metal::{*};
-use crate::engine::material::normal::{*};
-use crate::engine::material::refraction::{*};
-use crate::engine::material::uv::{*};
+use crate::engine::material::*;
+use crate::engine::material::diffuse::*;
+use crate::engine::material::metal::*;
+use crate::engine::material::normal::*;
+use crate::engine::material::refraction::*;
+use crate::engine::material::pbr::*;
+use crate::engine::material::pbr_metallic_roughness::*;
+use crate::engine::material::uv::*;
+use crate::engine::texture::texture2d::*;
 
-use super::geometry::sphere::{*};
+use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;
-use super::geometry::triangle::{*};
+use super::geometry::triangle::*;
 use super::geometry::vertex::Vertex;
 
-use data_url::{DataUrl, mime};
-//use crate::engine::octree::octree::{*};
+use std::io::Cursor;
+use image::io::Reader as ImageReader;
 
-use std::rc::{*};
+use data_url::{DataUrl, mime};
+//use crate::engine::octree::octree::*;
+
+use std::rc::*;
 use std::sync::{Arc};
 use std::io;
 use std::fs;
@@ -25,6 +31,7 @@ use std::fs;
 pub struct Scene {
     pub meshes: Vec<Arc<Mesh>>,
     pub materials: Vec<Arc<dyn Material>>,
+    pub textures: Vec<Arc<Texture2D>>,
     //pub octree: Arc<Octree>,
 }
 
@@ -47,6 +54,7 @@ impl Scene {
         Self { 
             meshes : Vec::new(),
             materials : Vec::new(),
+            textures : Vec::new(),
         }
     }
 
@@ -128,20 +136,50 @@ impl Scene {
         return 0;
     }
 
-    fn load_gltf_material(&mut self, material: gltf::material::Material) -> Arc<dyn Material> {
+    fn load_gltf_material(&mut self, context : &GLTFContext, material: gltf::material::Material) -> Arc<dyn Material> {
+        let mut pbr_material = PBRMaterial::new();
+
         let pbr_metallic_roughness = material.pbr_metallic_roughness();
         let pbr_base_color_texture_option = pbr_metallic_roughness.base_color_texture();
+        if pbr_base_color_texture_option.is_some() {
+            let pbr_base_color_texture = pbr_base_color_texture_option.unwrap();
+            let image = &context.decoded_images[pbr_base_color_texture.texture().index()];
+            pbr_material.pbr_metallic_roughness.base_color_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+        }
         let pbr_base_color_factor = pbr_metallic_roughness.base_color_factor();
+        pbr_material.pbr_metallic_roughness.base_color_factor = Vec4::from(pbr_base_color_factor);
+
         let pbr_metalic_roughness_texture_option = pbr_metallic_roughness.metallic_roughness_texture();
-        let pbr_metalic_factor = pbr_metallic_roughness.metallic_factor();
-        let pbr_roughness_factor = pbr_metallic_roughness.roughness_factor();
+        if pbr_metalic_roughness_texture_option.is_some() {
+            let pbr_metalic_roughness_texture = pbr_metalic_roughness_texture_option.unwrap();
+            let image = &context.decoded_images[pbr_metalic_roughness_texture.texture().index()];
+            pbr_material.pbr_metallic_roughness.metalic_roughness_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+        }
+
+        pbr_material.pbr_metallic_roughness.metalic_factor = pbr_metallic_roughness.metallic_factor();
+        pbr_material.pbr_metallic_roughness.roughness_factor = pbr_metallic_roughness.roughness_factor();
 
         let normal_texture_option = material.normal_texture();
+        if normal_texture_option.is_some() {
+            let normal_texture = normal_texture_option.unwrap();
+            let image = &context.decoded_images[normal_texture.texture().index()];
+            pbr_material.normal_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+        }
         let occlusion_texture_option = material.occlusion_texture();
+        if occlusion_texture_option.is_some() {
+            let occlusion_texture = occlusion_texture_option.unwrap();
+            let image = &context.decoded_images[occlusion_texture.texture().index()];
+            pbr_material.occlusion_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+        }
         let emissive_texture_option = material.emissive_texture();
-        let emissive_factor = material.emissive_factor();
+        if emissive_texture_option.is_some() {
+            let emissive_texture = emissive_texture_option.unwrap();
+            let image = &context.decoded_images[emissive_texture.texture().index()];
+            pbr_material.emissive_texture = Some(Arc::new(Texture2D::new(Arc::new(image.clone()))));
+        }
+        pbr_material.emissive_factor = Vec3A::from(material.emissive_factor());
 
-        Arc::new(NormalMaterial{})
+        Arc::new(pbr_material)
     }
 
     fn load_gltf_node(&mut self, context : &GLTFContext, node: &gltf::Node, matrix: &Mat4) {
@@ -303,7 +341,7 @@ impl Scene {
                     }
                 }
 
-                let material = self.load_gltf_material(primitive.material());
+                let material = self.load_gltf_material(context, primitive.material());
 
                 let mut mesh = Mesh::new(material.clone());
 
@@ -351,12 +389,34 @@ impl Scene {
 
         context.decoded_images.resize(gltf.images().count(), Vec::new());
         for image in gltf.images() {
+            let mut image_raw_data = Vec::new();
+
             match image.source() {
                 gltf::image::Source::Uri{ uri, mime_type } => {
                     let url = DataUrl::process(uri).unwrap();
-                    (context.decoded_images[image.index()], _) = url.decode_to_vec().unwrap();
+                    (image_raw_data, _) = url.decode_to_vec().unwrap();
                 },
-                gltf::image::Source::View { view, mime_type } => println!("Engine does not support binary buffer format"),
+                gltf::image::Source::View { view, mime_type } => {
+                    let buffer = &context.decoded_buffers[view.buffer().index()];
+                    image_raw_data = buffer[view.offset()..view.offset() + view.length()].to_vec();
+                },
+            }
+
+            let image_reader = ImageReader::new(Cursor::new(image_raw_data));
+            match image_reader.with_guessed_format() {
+                Ok(value) => {
+                    match value.decode() {
+                        Ok(value) => {
+                            context.decoded_images[image.index()] = value.into_bytes();
+                        },
+                        Err(error) => {
+                            println!("Failed to decode image; {}", error.to_string());
+                        }
+                    }
+                },
+                Err(error) => {
+                    println!("Failed to guess format of a texture; {}", error.to_string());
+                }
             }
         }
 

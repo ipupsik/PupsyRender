@@ -1,14 +1,14 @@
 use std::vec::Vec;
 use std::option::Option;
-use crate::engine::material::{*};
-use crate::engine::material::diffuse::{*};
+use crate::engine::material::*;
+use crate::engine::material::diffuse::*;
 use glam::{Vec3A};
-use crate::engine::math::ray::{*};
-use crate::engine::geometry::traceable::{*};
-use crate::engine::geometry::sphere::{*};
-use crate::engine::geometry::triangle::{*};
+use crate::engine::math::ray::*;
+use crate::engine::geometry::traceable::*;
+use crate::engine::geometry::sphere::*;
+use crate::engine::geometry::triangle::*;
 
-use std::rc::{*};
+use std::rc::*;
 use std::sync::{Arc};
 
 pub struct Mesh {

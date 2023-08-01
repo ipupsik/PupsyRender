@@ -2,10 +2,9 @@ use crate::engine::material::*;
 
 use crate::engine::geometry::traceable::*;
 use crate::engine::math::ray::*;
-use crate::engine::math::utils::{*};
+use crate::engine::math::utils::*;
 use glam::{Vec3A};
 
-#[derive(Copy, Clone)]
 pub struct MetalMaterial {
     pub metalness: f32,
 }

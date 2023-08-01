@@ -1,10 +1,9 @@
-use crate::engine::material::{*};
+use crate::engine::material::*;
 
-use crate::engine::math::ray::{*};
-use crate::engine::geometry::traceable::{*};
-use crate::engine::math::utils::{*};
+use crate::engine::math::ray::*;
+use crate::engine::geometry::traceable::*;
+use crate::engine::math::utils::*;
 
-#[derive(Copy, Clone)]
 pub struct DiffuseMaterial {
     
 }

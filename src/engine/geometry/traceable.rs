@@ -1,8 +1,8 @@
 use std::option::Option;
 
-use crate::engine::math::ray::{*};
-use crate::engine::material::{*};
-use std::sync::{*};
+use crate::engine::math::ray::*;
+use crate::engine::material::*;
+use std::sync::*;
 use glam::{Vec2, Vec3A};
 
 pub trait Traceable {
