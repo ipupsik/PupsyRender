@@ -1,16 +1,14 @@
 use std::ops::{Index, IndexMut};
 
-use log::*;
+use super::octant::*;
+use super::query::*;
 
-use crate::octant::*;
-use crate::query::*;
-
-type Point = [f64; 3];
+use crate::engine::geometry::triangle::*;
 
 #[derive(Clone, Debug)]
 pub struct Octree {
     /// reference points in 3D space
-    pub points: Vec<Point>,
+    pub vertices: Vec<Triangle>,
 
     /// private data storing all octants in octree
     octants: Vec<Octant>,
@@ -22,14 +20,14 @@ pub struct Octree {
 
 impl Octree {
     /// Construct octree from points in 3D space
-    pub fn new(points: impl IntoIterator<Item = Point>) -> Self {
-        let points: Vec<_> = points.into_iter().collect();
-        let octant = Octant::from_points(&points);
+    pub fn new(vertices: impl IntoIterator<Item = Triangle>) -> Self {
+        let vertices: Vec<_> = vertices.into_iter().collect();
+        let octant = Octant::from_points(&vertices);
         let octants = vec![octant];
         let root = OctantId(0);
 
         Octree {
-            points,
+            vertices,
             octants: octants,
             root: root,
             // mapping_octants: HashMap::new(),
@@ -99,7 +97,7 @@ impl Octree {
 
 /// octant: octree node data
 /// points: reference points in 3D space
-fn octree_create_child_octants(octant: &Octant, points: &[Point]) -> Vec<Octant> {
+fn octree_create_child_octants(octant: &Octant, points: &[Triangle]) -> Vec<Octant> {
     let extent = octant.extent as f64 / 2f64;
 
     // initialize 8 child octants
@@ -163,7 +161,7 @@ fn get_octant_cell_index(x: f64, y: f64, z: f64) -> usize {
 // useful for calculate center of child octant
 // morton decode
 #[inline]
-fn get_octant_cell_factor(index: usize) -> Point {
+fn get_octant_cell_factor(index: usize) -> Triangle {
     debug_assert!(index < 8);
     [
         match (index & 0b001) == 0 {
@@ -215,7 +213,7 @@ impl Octree {
 
                 // 3. loop control
                 if need_split.is_empty() {
-                    debug!("octree built after {:?} cycles.", depth);
+                    println!("octree built after {:?} cycles.", depth);
                     break;
                 }
             }
@@ -256,7 +254,7 @@ impl Octree {
     /// Return
     /// ------
     /// indices of nearby points and distances
-    pub fn search(&self, p: Point, radius: f64) -> impl Iterator<Item = (usize, f64)> + '_ {
+    pub fn search(&self, p: Triangle, radius: f64) -> impl Iterator<Item = (usize, f64)> + '_ {
         let mut query = Query::new(radius);
         query.center = p;
 

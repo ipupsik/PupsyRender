@@ -12,18 +12,18 @@ use std::rc::{*};
 use std::sync::{Arc};
 
 pub struct Mesh {
-    pub material : Arc<Box<dyn Material>>,
+    pub material : Arc<dyn Material>,
 
     geometry : Vec<Arc<dyn Traceable>>,
 }
 
 impl Mesh {
-    pub fn new(material : Arc<Box<dyn Material>>) -> Self {
-        Self{material : material.clone(), geometry : Vec::new()}
+    pub fn new(material : Arc<dyn Material>) -> Self {
+        Self{material : material, geometry : Vec::new()}
     }
 
     pub fn add_geometry(&mut self, geometry : Arc<dyn Traceable>) {
-        self.geometry.push(geometry.clone());
+        self.geometry.push(geometry);
     }
 
     pub fn hit(&self, ray: &Ray) -> Option<HitResult> {
@@ -44,8 +44,6 @@ impl Mesh {
         if !success {
             return None;
         }
-
-        min_hit_result.material = Arc::downgrade(&self.material);
 
         Some(min_hit_result)
     }

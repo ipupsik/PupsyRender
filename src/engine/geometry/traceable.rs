@@ -13,7 +13,6 @@ pub struct HitResult {
     pub position: Vec3A,
     pub t: f32,
     pub normal: Vec3A,
-    pub material: Weak<Box<dyn Material>>,
     pub uv: Vec2,
     pub front_face: bool
 }
@@ -24,7 +23,6 @@ impl HitResult {
             position: Vec3A::new(0.0, 0.0, 0.0),
             t: f32::MAX,
             normal: Vec3A::new(0.0, 0.0, 0.0),
-            material: Weak::new(),
             uv: Vec2::ZERO,
             front_face: true,
         }

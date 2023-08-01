@@ -15,6 +15,7 @@ use super::geometry::triangle::{*};
 use super::geometry::vertex::Vertex;
 
 use data_url::{DataUrl, mime};
+//use crate::engine::octree::octree::{*};
 
 use std::rc::{*};
 use std::sync::{Arc};
@@ -22,8 +23,9 @@ use std::io;
 use std::fs;
 
 pub struct Scene {
-    pub meshes: Vec<Mesh>,
-    pub materials: Vec<Arc<Box<dyn Material>>>,
+    pub meshes: Vec<Arc<Mesh>>,
+    pub materials: Vec<Arc<dyn Material>>,
+    //pub octree: Arc<Octree>,
 }
 
 struct GLTFContext {
@@ -126,7 +128,7 @@ impl Scene {
         return 0;
     }
 
-    fn load_gltf_material(&mut self, material: gltf::material::Material) -> Arc<Box<dyn Material>> {
+    fn load_gltf_material(&mut self, material: gltf::material::Material) -> Arc<dyn Material> {
         let pbr_metallic_roughness = material.pbr_metallic_roughness();
         let pbr_base_color_texture_option = pbr_metallic_roughness.base_color_texture();
         let pbr_base_color_factor = pbr_metallic_roughness.base_color_factor();
@@ -139,7 +141,7 @@ impl Scene {
         let emissive_texture_option = material.emissive_texture();
         let emissive_factor = material.emissive_factor();
 
-        Arc::new(Box::new(NormalMaterial{}))
+        Arc::new(NormalMaterial{})
     }
 
     fn load_gltf_node(&mut self, context : &GLTFContext, node: &gltf::Node, matrix: &Mat4) {
@@ -303,7 +305,7 @@ impl Scene {
 
                 let material = self.load_gltf_material(primitive.material());
 
-                let mut mesh : Mesh = Mesh::new(material.clone());
+                let mut mesh = Mesh::new(material.clone());
 
                 assert!(positions.len() == uvs.len());
                 assert!(uvs.len() == normals.len());
@@ -320,7 +322,7 @@ impl Scene {
                     mesh.add_geometry(Arc::new(Triangle::new(vertex1, vertex2, vertex3)));
                 }
 
-                self.meshes.push(mesh);
+                self.meshes.push(Arc::new(mesh));
                 self.materials.push(material);
             }
         }
@@ -366,40 +368,40 @@ impl Scene {
     }
 
     pub fn load_debug(&mut self) {
-        let diffuse_material: Arc<Box<dyn Material>> = Arc::new(Box::new(DiffuseMaterial{}));
-        let metal_material: Arc<Box<dyn Material>> = Arc::new(
-            Box::new(MetalMaterial{metalness : 0.9})
+        let diffuse_material = Arc::new(DiffuseMaterial{});
+        let metal_material = Arc::new(
+            MetalMaterial{metalness : 0.9}
         );
-        let normal_material: Arc<Box<dyn Material>> = Arc::new(Box::new(NormalMaterial{}));
-        let refraction_material: Arc<Box<dyn Material>> = Arc::new(
-            Box::new(RefractionMaterial{refraction_type: RefractionType::Glass})
+        let normal_material = Arc::new(NormalMaterial{});
+        let refraction_material = Arc::new(
+            RefractionMaterial{refraction_type: RefractionType::Glass}
         );
-        let uv_material: Arc<Box<dyn Material>> = Arc::new(
-            Box::new(UVMaterial{})
+        let uv_material = Arc::new(
+            UVMaterial{}
         );
 
-        let mut mesh : Mesh = Mesh::new(diffuse_material.clone());
+        let mut mesh = Mesh::new(diffuse_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(1.7, 0.0, 0.6)}));
         mesh.add_geometry(Arc::new(Sphere{radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
-        self.meshes.push(mesh);
+        self.meshes.push(Arc::new(mesh));
         
-        let mut mesh : Mesh = Mesh::new(metal_material.clone());
+        let mut mesh = Mesh::new(metal_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
-        self.meshes.push(mesh);
+        self.meshes.push(Arc::new(mesh));
 
-        let mut mesh : Mesh = Mesh::new(normal_material.clone());
+        let mut mesh = Mesh::new(normal_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
-        self.meshes.push(mesh);
+        self.meshes.push(Arc::new(mesh));
 
-        let mut mesh : Mesh = Mesh::new(refraction_material.clone());
+        let mut mesh = Mesh::new(refraction_material.clone());
         mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.3, 0.15, 0.5)}));
-        self.meshes.push(mesh);
+        self.meshes.push(Arc::new(mesh));
 
-        self.materials.push(diffuse_material);
-        self.materials.push(metal_material);
-        self.materials.push(normal_material);
-        self.materials.push(refraction_material);
-        self.materials.push(uv_material);
+        self.materials.push(diffuse_material.clone());
+        self.materials.push(metal_material.clone());
+        self.materials.push(normal_material.clone());
+        self.materials.push(refraction_material.clone());
+        self.materials.push(uv_material.clone());
 
         // gltf
         //self.load_gltf("example1.gltf");

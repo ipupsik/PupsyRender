@@ -40,7 +40,7 @@ impl Traceable for Sphere {
             front_face = false;
         }
 
-        Some(HitResult{position : position, t : t, normal : normal, material : Weak::new(), 
+        Some(HitResult{position : position, t : t, normal : normal, 
             uv: Vec2::ZERO, front_face: front_face})
     }
 }

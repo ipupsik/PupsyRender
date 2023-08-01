@@ -1,4 +1,4 @@
-type Point = [f64; 3];
+use crate::engine::geometry::triangle::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug, Default, Hash)]
 pub(crate) struct OctantId(pub usize);
@@ -11,7 +11,7 @@ pub(crate) struct Octant {
     pub children: Vec<OctantId>,
 
     /// The actual data which will be stored within the tree.
-    pub center: Point,
+    pub center: Triangle,
     /// The extent of octant (in radius).
     pub extent: f64,
     /// Child point indices in point cloud.
@@ -36,9 +36,7 @@ impl Octant {
     }
 
     /// Construct a root octant from 3D points
-    pub fn from_points(points: &[Point]) -> Self {
-        use vecfx::*;
-
+    pub fn from_points(points: &[Triangle]) -> Self {
         // define the boundary in XYZ directions
         let xs: Vec<_> = points.iter().map(|[x, _, _]| *x).collect();
         let ys: Vec<_> = points.iter().map(|[_, y, _]| *y).collect();

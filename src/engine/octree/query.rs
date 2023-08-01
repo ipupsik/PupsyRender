@@ -1,6 +1,6 @@
 type Point = [f64; 3];
 
-use crate::octant::*;
+use super::octant::*;
 
 #[derive(Debug)]
 pub(crate) struct Query {
