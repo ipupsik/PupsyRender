@@ -170,129 +170,115 @@ impl Scene {
                         stride = buffer_view.stride().unwrap();
                     }
 
-                    match attribute.0 {
-                        // vec3
-                        gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                            if sparse_option.is_some() {
-                                let sparse = sparse_option.unwrap();
+                    if sparse_option.is_some() {
+                        let sparse = sparse_option.unwrap();
 
-                                let indices_buffer_view = sparse.indices().view();
-                                let indices_buffer = &context.decoded_buffers[indices_buffer_view.buffer().index()];
-                                let indices_size = sparse.indices().index_type().size();
-                                let mut indices_stride = indices_size; 
-                                if indices_buffer_view.stride().is_some() {
-                                    indices_stride = indices_buffer_view.stride().unwrap();
-                                }
+                        let indices_buffer_view = sparse.indices().view();
+                        let indices_buffer = &context.decoded_buffers[indices_buffer_view.buffer().index()];
+                        let indices_size = sparse.indices().index_type().size();
+                        let mut indices_stride = indices_size; 
+                        if indices_buffer_view.stride().is_some() {
+                            indices_stride = indices_buffer_view.stride().unwrap();
+                        }
 
-                                let mut indices_buffer_pos = 0;
-                                while indices_buffer_pos < indices_buffer_view.length() {
-                                    let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
+                        let mut indices_buffer_pos = 0;
+                        while indices_buffer_pos < indices_buffer_view.length() {
+                            let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
+                            match attribute.0 {
+                                gltf::Semantic::Positions | gltf::Semantic::Normals => {
                                     let decoded_vector = Self::decode_triangle_vec3_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
-
                                     match attribute.0 {
                                         gltf::Semantic::Positions => positions.push(decoded_vector),
                                         gltf::Semantic::Normals => normals.push(decoded_vector),
                                         _ => println!("Invalid attribute"),
                                     };
+                                },
+                                gltf::Semantic::TexCoords(set) => {
+                                    let decoded_vector = Self::decode_triangle_vec2_indexed(
+                                        buffer, buffer_view.offset(), stride, raw_type.size(),
+                                        indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
+                                    );
+                                    uvs.push(decoded_vector);
+                                },
+                                _ => println!("Invalid attribute"),
+                            };
 
-                                    indices_buffer_pos += indices_stride * 3;
-                                }
-                            } else {
-                                if primitive_indices_option.is_some() {
-                                    let indices = primitive_indices_option.unwrap();
-                                    let indices_buffer_view = indices.view().expect("Error in gltf file, indices buffer view is empty, when
-                                        indices are not");
-                                    let indices_buffer = &context.decoded_buffers[indices_buffer_view.buffer().index()];
-                
-                                    let indices_raw_type = indices.data_type();
-                                    let indices_data_type = indices.dimensions();
-                
-                                    let indices_size = indices_data_type.multiplicity() * indices_raw_type.size();
-                                    let mut indices_stride = indices_size; 
-                                    if indices_buffer_view.stride().is_some() {
-                                        indices_stride = indices_buffer_view.stride().unwrap();
-                                    }
+                            indices_buffer_pos += indices_stride * 3;
+                        }
+                    } else {
+                        if primitive_indices_option.is_some() {
+                            let indices = primitive_indices_option.unwrap();
+                            let indices_buffer_view = indices.view().expect("Error in gltf file, indices buffer view is empty, when
+                                indices are not");
+                            let indices_buffer = &context.decoded_buffers[indices_buffer_view.buffer().index()];
+        
+                            let indices_raw_type = indices.data_type();
+                            let indices_data_type = indices.dimensions();
+        
+                            let indices_size = indices_data_type.multiplicity() * indices_raw_type.size();
+                            let mut indices_stride = indices_size; 
+                            if indices_buffer_view.stride().is_some() {
+                                indices_stride = indices_buffer_view.stride().unwrap();
+                            }
 
-                                    let mut indices_buffer_pos = 0;
-                                    while indices_buffer_pos < indices_buffer_view.length() {
-                                        let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
+                            let mut indices_buffer_pos = 0;
+                            while indices_buffer_pos < indices_buffer_view.length() {
+                                let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
+                                match attribute.0 {
+                                    gltf::Semantic::Positions | gltf::Semantic::Normals => {
                                         let decoded_vector = Self::decode_triangle_vec3_indexed(
                                             buffer, buffer_view.offset(), stride, raw_type.size(),
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
-
                                         match attribute.0 {
                                             gltf::Semantic::Positions => positions.push(decoded_vector),
                                             gltf::Semantic::Normals => normals.push(decoded_vector),
                                             _ => println!("Invalid attribute"),
                                         };
+                                    },
+                                    gltf::Semantic::TexCoords(set) => {
+                                        let decoded_vector = Self::decode_triangle_vec2_indexed(
+                                            buffer, buffer_view.offset(), stride, raw_type.size(),
+                                            indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
+                                        );
+                                        uvs.push(decoded_vector);
+                                    },
+                                    _ => println!("Invalid attribute"),
+                                };
 
-                                        indices_buffer_pos += indices_stride * 3;
-                                    }
-                                } else {
-                                    let mut buffer_pos = 0;
-                                    while buffer_pos < buffer_view.length() {
-                                        let pos_raw_data_pos = buffer_view.offset() + buffer_pos;                                        
+                                indices_buffer_pos += indices_stride * 3;
+                            }
+                        } else {
+                            let mut buffer_pos = 0;
+                            while buffer_pos < buffer_view.length() {
+                                let pos_raw_data_pos = buffer_view.offset() + buffer_pos;   
+
+                                match attribute.0 {
+                                    gltf::Semantic::Positions | gltf::Semantic::Normals => {
                                         let decoded_vector =  Self::decode_triangle_vec3(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
-
                                         match attribute.0 {
                                             gltf::Semantic::Positions => positions.push(decoded_vector),
                                             gltf::Semantic::Normals => normals.push(decoded_vector),
                                             _ => println!("Invalid attribute"),
                                         };
-    
-                                        buffer_pos += stride * 3;
-                                    }
-                                }
-                            }                            
-                        },
-                        // vec2
-                        gltf::Semantic::TexCoords(set) => {
-                            let primitive_indices_option = primitive.indices();
-                            if primitive_indices_option.is_some() {
-                                let indices = primitive_indices_option.unwrap();
-                                let indices_buffer_view = indices.view().expect("Error in gltf file, indices buffer view is empty, when
-                                    indices are not");
-                                let indices_buffer = &context.decoded_buffers[indices_buffer_view.buffer().index()];
-            
-                                let indices_raw_type = indices.data_type();
-                                let indices_data_type = indices.dimensions();
-            
-                                let indices_size = indices_data_type.multiplicity() * indices_raw_type.size();
-                                let mut indices_stride = indices_size; 
-                                if indices_buffer_view.stride().is_some() {
-                                    indices_stride = indices_buffer_view.stride().unwrap();
-                                }
+                                    },
+                                    gltf::Semantic::TexCoords(set) => {
+                                        let decoded_vector = Self::decode_triangle_vec2(
+                                            buffer, pos_raw_data_pos, stride, raw_type.size()
+                                        );
+                                        uvs.push(decoded_vector);
+                                    },
+                                    _ => println!("Invalid attribute"),
+                                }                                     
 
-                                let mut indices_buffer_pos = 0;
-                                while indices_buffer_pos < indices_buffer_view.length() {
-                                    let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
-                                    uvs.push(Self::decode_triangle_vec2_indexed(
-                                        buffer, buffer_view.offset(), stride, raw_type.size(),
-                                        indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
-                                    ));
-
-                                    indices_buffer_pos += indices_stride * 3;
-                                }
-                            } else {
-                                let mut buffer_pos = 0;
-                                while buffer_pos < buffer_view.length() {
-                                    let pos_raw_data_pos = buffer_view.offset() + buffer_pos;
-                                    
-                                    uvs.push(Self::decode_triangle_vec2(
-                                        buffer, pos_raw_data_pos, stride, raw_type.size()
-                                    ));
-
-                                    buffer_pos += stride * 3;
-                                }
+                                buffer_pos += stride * 3;
                             }
-                        },
-                        _ => println!("Unhandled semantic")
+                        }                      
                     }
                 }
 
