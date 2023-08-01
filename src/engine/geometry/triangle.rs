@@ -3,9 +3,12 @@ use crate::engine::geometry::traceable::*;
 use crate::engine::geometry::vertex::*;
 use glam::{Vec2, Vec3A};
 use crate::engine::bvh::aabb::*;
+use crate::engine::material::*;
 use std::sync::*;
 
 pub struct Triangle {
+    pub material: Arc<dyn Material>,
+
     pub vertices: [Vertex; 3],
     pub normal: Vec3A,
 }
@@ -13,8 +16,9 @@ pub struct Triangle {
 impl Triangle {
     pub const EPSILON: f32 = 1e-8;
     
-    pub const fn new(v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self{
+    pub fn new(material: Arc<dyn Material>, v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self{
         Self {
+            material: material.clone(),
             vertices : [v1, v2, v3],
             normal: Vec3A::ZERO
         }
@@ -59,7 +63,7 @@ impl Traceable for Triangle {
         let normal = self.vertices[0].normal * (1.0 - v - u) + self.vertices[1].normal * u + self.vertices[2].normal * v;
 
         return Some(HitResult { position: ray.at(t), t: t, normal: normal, 
-            uv: uv, front_face: front_face });
+            uv: uv, front_face: front_face, material: self.material.clone() });
     }
 
     fn bounding_box(&self) -> AABB {

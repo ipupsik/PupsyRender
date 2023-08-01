@@ -1,6 +1,6 @@
 use std::option::Option;
 
-use crate::engine::math::ray::*;
+use crate::engine::{math::ray::*, material::diffuse::DiffuseMaterial};
 use crate::engine::material::*;
 use std::sync::*;
 use crate::engine::bvh::aabb::*;
@@ -16,7 +16,8 @@ pub struct HitResult {
     pub t: f32,
     pub normal: Vec3A,
     pub uv: Vec2,
-    pub front_face: bool
+    pub front_face: bool,
+    pub material: Arc<dyn Material>,
 }
 
 impl HitResult {
@@ -27,6 +28,7 @@ impl HitResult {
             normal: Vec3A::new(0.0, 0.0, 0.0),
             uv: Vec2::ZERO,
             front_face: true,
+            material: Arc::new(DiffuseMaterial{})
         }
     }
 }

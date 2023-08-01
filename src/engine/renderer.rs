@@ -33,17 +33,15 @@ impl Renderer {
     fn sample_scene(ray : &Ray, scene : &Scene, depth : u64) -> Vec3A {
         let mut success = false;
         let mut min_hit_result = HitResult::new();
-        let mut hit_material:Arc<dyn Material> = Arc::new(DiffuseMaterial{});
 
-        for mesh in scene.meshes.iter() {
-            let hit_option: Option<HitResult>  = mesh.hit(ray);
+        for traceable in scene.geometry.iter() {
+            let hit_option: Option<HitResult>  = traceable.hit(ray, 0.001, f32::MAX);
 
             if hit_option.is_some() {
                 let hit_result = hit_option.unwrap();
                 if hit_result.t < min_hit_result.t {
                     success = true;
                     min_hit_result = hit_result;
-                    hit_material = mesh.material.clone();
                 }
             }
         }
@@ -53,10 +51,10 @@ impl Renderer {
             return (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
         }
 
-        let sample = hit_material.sample(&min_hit_result);
+        let sample = min_hit_result.material.sample(&min_hit_result);
 
         if depth > 1 {
-            let scatter_option = hit_material.scatter(ray, &min_hit_result);
+            let scatter_option = min_hit_result.material.scatter(ray, &min_hit_result);
 
             if scatter_option.is_some() {
                 let scatter_vector = scatter_option.unwrap();

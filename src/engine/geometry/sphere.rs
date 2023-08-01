@@ -2,10 +2,13 @@ use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use glam::{Vec2, Vec3A};
 use crate::engine::bvh::aabb::*;
+use crate::engine::material::*;
 
 use std::sync::*;
 
 pub struct Sphere {
+    pub material: Arc<dyn Material>,
+
     pub radius : f32,
     pub position: Vec3A,
 }
@@ -42,7 +45,7 @@ impl Traceable for Sphere {
         }
 
         Some(HitResult{position : position, t : t, normal : normal, 
-            uv: Vec2::ZERO, front_face: front_face})
+            uv: Vec2::ZERO, front_face: front_face, material: self.material.clone()})
     }
 
     fn bounding_box(&self) -> AABB {
