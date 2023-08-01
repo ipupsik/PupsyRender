@@ -27,12 +27,14 @@ pub struct Scene {
 
 struct GLTFContext {
     pub decoded_buffers : Vec<Vec<u8>>,
+    pub decoded_images : Vec<Vec<u8>>,
 }
 
 impl GLTFContext {
     pub fn new() -> Self {
         Self{
             decoded_buffers : Vec::new(),
+            decoded_images : Vec::new(),
         }
     }
 }
@@ -347,6 +349,17 @@ impl Scene {
                     (context.decoded_buffers[buffer.index()], _) = url.decode_to_vec().unwrap();
                 },
                 gltf::buffer::Source::Bin => println!("Engine does not support binary buffer format"),
+            }
+        }
+
+        context.decoded_images.resize(gltf.images().count(), Vec::new());
+        for image in gltf.images() {
+            match image.source() {
+                gltf::image::Source::Uri{ uri, mime_type } => {
+                    let url = DataUrl::process(uri).unwrap();
+                    (context.decoded_images[image.index()], _) = url.decode_to_vec().unwrap();
+                },
+                gltf::image::Source::View { view, mime_type } => println!("Engine does not support binary buffer format"),
             }
         }
 
