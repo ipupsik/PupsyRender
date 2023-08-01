@@ -7,9 +7,9 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    pub const fn new(position : Vec3A, uv: Vec2) -> Self {
+    pub const fn new(position : Vec3A, normal: Vec3A, uv: Vec2) -> Self {
         Self{ position : position,
-        normal : Vec3A::ZERO,
+        normal : normal,
         uv : uv}
     }
 }
