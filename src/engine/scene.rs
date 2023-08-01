@@ -44,7 +44,7 @@ impl Scene {
         }
     }
 
-    fn decode_triangle_positions_indexed(
+    fn decode_triangle_vec3_indexed(
         buffer : &Vec<u8>, offset: usize, stride: usize, raw_size: usize,
         indices_buffer : &Vec<u8>, indices_offset : usize, indices_stride: usize,  indices_raw_size: usize
     ) -> [Vec3A; 3] {
@@ -59,7 +59,7 @@ impl Scene {
         [pos1, pos2, pos3]
     }
 
-    fn decode_triangle_positions(buffer : &Vec<u8>, offset : usize, stride : usize, 
+    fn decode_triangle_vec3(buffer : &Vec<u8>, offset : usize, stride : usize, 
         raw_size : usize) -> [Vec3A; 3] {
         let pos1 = Self::decode_vec3(buffer, offset, raw_size);
         let pos2 = Self::decode_vec3(buffer, offset + stride, raw_size);
@@ -68,7 +68,7 @@ impl Scene {
         [pos1, pos2, pos3]
     }
 
-    fn decode_triangle_uvs_indexed(
+    fn decode_triangle_vec2_indexed(
         buffer : &Vec<u8>, offset: usize, stride: usize, raw_size: usize,
         indices_buffer : &Vec<u8>, indices_offset : usize, indices_stride: usize,  indices_raw_size: usize
     ) -> [Vec2; 3] {
@@ -83,7 +83,7 @@ impl Scene {
         [uv1, uv2, uv3]
     }
 
-    fn decode_triangle_uvs(buffer : &Vec<u8>, offset : usize, stride : usize, 
+    fn decode_triangle_vec2(buffer : &Vec<u8>, offset : usize, stride : usize, 
         raw_size : usize) -> [Vec2; 3] {
         let uv1 = Self::decode_vec2(buffer, offset, raw_size);
         let uv2 = Self::decode_vec2(buffer, offset + stride, raw_size);
@@ -131,13 +131,15 @@ impl Scene {
             let gltf_mesh = mesh_option.unwrap();
 
             let diffuse_material: Arc<Box<dyn Material>> = Arc::new(Box::new(NormalMaterial{}));
+            let normal_material: Arc<Box<dyn Material>> = Arc::new(Box::new(NormalMaterial{}));
             let uv_material: Arc<Box<dyn Material>> = Arc::new(
                 Box::new(UVMaterial{})
             );
-            let mut mesh : Mesh = Mesh::new(uv_material.clone());
+            let mut mesh : Mesh = Mesh::new(normal_material.clone());
 
-            let mut triangles: Vec<[Vec3A; 3]> = Vec::new();
+            let mut positions: Vec<[Vec3A; 3]> = Vec::new();
             let mut uvs: Vec<[Vec2; 3]> = Vec::new();
+            let mut normals: Vec<[Vec3A; 3]> = Vec::new();
 
             for primitive in gltf_mesh.primitives() {
                 for attribute in primitive.attributes() {
@@ -171,7 +173,7 @@ impl Scene {
                                 let mut indices_buffer_pos = 0;
                                 while indices_buffer_pos < indices_buffer_view.length() {
                                     let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
-                                    triangles.push(Self::decode_triangle_positions_indexed(
+                                    positions.push(Self::decode_triangle_vec3_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     ));
@@ -197,7 +199,7 @@ impl Scene {
                                     let mut indices_buffer_pos = 0;
                                     while indices_buffer_pos < indices_buffer_view.length() {
                                         let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
-                                        triangles.push(Self::decode_triangle_positions_indexed(
+                                        positions.push(Self::decode_triangle_vec3_indexed(
                                             buffer, buffer_view.offset(), stride, raw_type.size(),
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         ));
@@ -208,7 +210,7 @@ impl Scene {
                                     let mut buffer_pos = 0;
                                     while buffer_pos < buffer_view.length() {
                                         let pos_raw_data_pos = buffer_view.offset() + buffer_pos;                                        
-                                        triangles.push(Self::decode_triangle_positions(
+                                        positions.push(Self::decode_triangle_vec3(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         ));
     
@@ -237,7 +239,7 @@ impl Scene {
                                 let mut indices_buffer_pos = 0;
                                 while indices_buffer_pos < indices_buffer_view.length() {
                                     let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
-                                    uvs.push(Self::decode_triangle_uvs_indexed(
+                                    uvs.push(Self::decode_triangle_vec2_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                     ));
@@ -249,7 +251,47 @@ impl Scene {
                                 while buffer_pos < buffer_view.length() {
                                     let pos_raw_data_pos = buffer_view.offset() + buffer_pos;
                                     
-                                    uvs.push(Self::decode_triangle_uvs(
+                                    uvs.push(Self::decode_triangle_vec2(
+                                        buffer, pos_raw_data_pos, stride, raw_type.size()
+                                    ));
+
+                                    buffer_pos += stride * 3;
+                                }
+                            }
+                        },
+                        gltf::Semantic::Normals => {
+                            let primitive_indices_option = primitive.indices();
+                            if primitive_indices_option.is_some() {
+                                let indices = primitive_indices_option.unwrap();
+                                let indices_buffer_view = indices.view().expect("Error in gltf file, indices buffer view is empty, when
+                                    indices are not");
+                                let indices_buffer = &context.decoded_buffers[indices_buffer_view.buffer().index()];
+            
+                                let indices_raw_type = indices.data_type();
+                                let indices_data_type = indices.dimensions();
+            
+                                let indices_size = indices_data_type.multiplicity() * indices_raw_type.size();
+                                let mut indices_stride = indices_size; 
+                                if indices_buffer_view.stride().is_some() {
+                                    indices_stride = indices_buffer_view.stride().unwrap();
+                                }
+
+                                let mut indices_buffer_pos = 0;
+                                while indices_buffer_pos < indices_buffer_view.length() {
+                                    let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
+                                    normals.push(Self::decode_triangle_vec3_indexed(
+                                        buffer, buffer_view.offset(), stride, raw_type.size(),
+                                        indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
+                                    ));
+
+                                    indices_buffer_pos += indices_stride * 3;
+                                }
+                            } else {
+                                let mut buffer_pos = 0;
+                                while buffer_pos < buffer_view.length() {
+                                    let pos_raw_data_pos = buffer_view.offset() + buffer_pos;
+                                    
+                                    normals.push(Self::decode_triangle_vec3(
                                         buffer, pos_raw_data_pos, stride, raw_type.size()
                                     ));
 
@@ -261,16 +303,17 @@ impl Scene {
                     }
                 }
 
-                assert!(triangles.len() == uvs.len());
-                let triangles_count = triangles.len();
+                assert!(positions.len() == uvs.len());
+                assert!(uvs.len() == normals.len());
+                let triangles_count = positions.len();
 
                 let mut mesh_triangles: Vec<Arc<Box<dyn Traceable>>> = Vec::new();
                 mesh_triangles.reserve(triangles_count);
 
                 for i in 0..triangles_count {
-                    let vertex1 = Vertex::new(triangles[i][0], uvs[i][0]);
-                    let vertex2 = Vertex::new(triangles[i][1], uvs[i][1]);
-                    let vertex3 = Vertex::new(triangles[i][2], uvs[i][2]);
+                    let vertex1 = Vertex::new(positions[i][0], normals[i][0], uvs[i][0]);
+                    let vertex2 = Vertex::new(positions[i][1], normals[i][1], uvs[i][1]);
+                    let vertex3 = Vertex::new(positions[i][2], normals[i][2], uvs[i][2]);
 
                     mesh.add_geometry(Arc::new(Triangle::new(vertex1, vertex2, vertex3)));
                 }
@@ -341,7 +384,7 @@ impl Scene {
         self.meshes.push(mesh);
 
         let mut mesh : Mesh = Mesh::new(refraction_material.clone());
-        mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.7, 0.0, 0.6)}));
+        mesh.add_geometry(Arc::new(Sphere{radius : 0.5, position : Vec3A::new(-1.3, 0.15, 0.5)}));
         self.meshes.push(mesh);
 
         // gltf
