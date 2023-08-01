@@ -3,6 +3,7 @@ pub mod metal;
 pub mod normal;
 pub mod uv;
 pub mod refraction;
+pub mod pbr;
 
 use crate::engine::math::ray::{*};
 use glam::{Vec3A};
