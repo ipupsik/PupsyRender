@@ -4,16 +4,28 @@ use std::sync::*;
 
 #[derive(Clone)]
 pub struct Texture {
-    width: u32,
-    height: u32,
+    dimensions: Vec<u32>,
+    bytes_per_component: u32,
+    components_per_pixel: i32,
     buffer: Arc<Vec<u8>>
 }
 
 impl Texture {
-    pub fn new(width: u32, height: u32, buffer: Arc<Vec<u8>>) -> Self {
+    pub fn null() -> Self {
         Self {
-            width: width,
-            height: height,
+            dimensions: vec![],
+            bytes_per_component: 0,
+            components_per_pixel: 0,
+            buffer: Arc::new(Vec::new()),
+        }
+    }
+
+    pub fn new(dimensions: Vec<u32>, bytes_per_component: u32,
+        components_per_pixel: i32, buffer: Arc<Vec<u8>>) -> Self {
+        Self {
+            dimensions: dimensions,
+            bytes_per_component: bytes_per_component, 
+            components_per_pixel: components_per_pixel,
             buffer: buffer.clone(),
         }
     }

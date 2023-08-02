@@ -25,9 +25,9 @@ impl PBRMetallicRoughnessMaterial {
     pub fn new() -> Self {
         Self {
             base_color_factor: Vec4::ONE,
-            base_color_texture:Arc::new(Texture2D::new(Texture::new(0, 0, Arc::new(Vec::new())))),
+            base_color_texture: Arc::new(Texture2D::null()),
             base_color_texture_sampler: Sampler::new(),
-            metalic_roughness_texture:  Arc::new(Texture2D::new(Texture::new(0, 0, Arc::new(Vec::new())))),
+            metalic_roughness_texture:  Arc::new(Texture2D::null()),
             metalic_roughness_texture_sampler: Sampler::new(),
             metalic_factor: 0.0,
             roughness_factor: 0.0
@@ -48,6 +48,7 @@ impl Material for PBRMetallicRoughnessMaterial {
     fn sample(&self, hit_result : &HitResult) -> Vec3A {
         let mut sample = self.base_color_factor;
         sample = sample * self.base_color_texture.sample(&self.base_color_texture_sampler, hit_result.uv);
+        sample = Vec4::from((hit_result.uv, 0.0, 0.0));
         return Vec3A::from(sample);
     }
 }

@@ -13,6 +13,7 @@ use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::texture::*;
 use crate::engine::geometry::bvh::node::*;
+use crate::engine::math::utils::*;
 
 use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;
@@ -21,9 +22,9 @@ use super::geometry::vertex::Vertex;
 
 use std::io::Cursor;
 use image::io::Reader as ImageReader;
+use image::ColorType;
 
 use data_url::{DataUrl, mime};
-//use crate::engine::octree::octree::*;
 
 use std::rc::*;
 use std::sync::{Arc};
@@ -63,84 +64,6 @@ impl Scene {
 
     pub fn build_bvh(&mut self) {
         self.bvh = Node::new(&self.geometry, 0, self.geometry.len());
-    }
-
-    fn decode_triangle_vec3_indexed(
-        buffer : &Vec<u8>, offset: usize, stride: usize, raw_size: usize,
-        indices_buffer : &Vec<u8>, indices_offset : usize, indices_stride: usize,  indices_raw_size: usize
-    ) -> [Vec3A; 3] {
-        let index1 = Self::decode_int(indices_buffer, indices_offset, indices_raw_size) as usize;
-        let index2 = Self::decode_int(indices_buffer, indices_offset + indices_stride, indices_raw_size) as usize;
-        let index3 = Self::decode_int(indices_buffer, indices_offset + indices_stride * 2, indices_raw_size) as usize;
-
-        let pos1 = Self::decode_vec3(buffer, offset + index1 * stride, raw_size);
-        let pos2 = Self::decode_vec3(buffer, offset + index2 * stride, raw_size);
-        let pos3 = Self::decode_vec3(buffer, offset + index3 * stride, raw_size);
-
-        [pos1, pos2, pos3]
-    }
-
-    fn decode_triangle_vec3(buffer : &Vec<u8>, offset : usize, stride : usize, 
-        raw_size : usize) -> [Vec3A; 3] {
-        let pos1 = Self::decode_vec3(buffer, offset, raw_size);
-        let pos2 = Self::decode_vec3(buffer, offset + stride, raw_size);
-        let pos3 = Self::decode_vec3(buffer, offset + stride * 2, raw_size);
-
-        [pos1, pos2, pos3]
-    }
-
-    fn decode_triangle_vec2_indexed(
-        buffer : &Vec<u8>, offset: usize, stride: usize, raw_size: usize,
-        indices_buffer : &Vec<u8>, indices_offset : usize, indices_stride: usize,  indices_raw_size: usize
-    ) -> [Vec2; 3] {
-        let index1 = Self::decode_int(indices_buffer, indices_offset, indices_raw_size) as usize;
-        let index2 = Self::decode_int(indices_buffer, indices_offset + indices_stride, indices_raw_size) as usize;
-        let index3 = Self::decode_int(indices_buffer, indices_offset + indices_stride * 2, indices_raw_size) as usize;
-
-        let uv1 = Self::decode_vec2(buffer, offset + index1 * stride, raw_size);
-        let uv2 = Self::decode_vec2(buffer, offset + index2 * stride, raw_size);
-        let uv3 = Self::decode_vec2(buffer, offset + index3 * stride, raw_size);
-
-        [uv1, uv2, uv3]
-    }
-
-    fn decode_triangle_vec2(buffer : &Vec<u8>, offset : usize, stride : usize, 
-        raw_size : usize) -> [Vec2; 3] {
-        let uv1 = Self::decode_vec2(buffer, offset, raw_size);
-        let uv2 = Self::decode_vec2(buffer, offset + stride, raw_size);
-        let uv3 = Self::decode_vec2(buffer, offset + stride * 2, raw_size);
-
-        [uv1, uv2, uv3]
-    }
-
-    fn decode_vec3(buffer : &Vec<u8>, offset : usize, raw_size : usize) -> Vec3A {
-        return Vec3A::new(
-            f32::from_le_bytes(buffer[offset..offset + raw_size].try_into().expect("Invalid x")),
-            f32::from_le_bytes(buffer[offset + raw_size..offset + raw_size * 2].try_into().expect("Invalid y")),
-            f32::from_le_bytes(buffer[offset + raw_size * 2..offset + raw_size * 3].try_into().expect("Invalid z"))
-        );
-    }
-
-    fn decode_vec2(buffer : &Vec<u8>, offset : usize, raw_size : usize) -> Vec2 {
-        return Vec2::new(
-            f32::from_le_bytes(buffer[offset..offset + raw_size].try_into().expect("Invalid x")),
-            f32::from_le_bytes(buffer[offset + raw_size..offset + raw_size * 2].try_into().expect("Invalid y"))
-        );
-    }
-
-    fn decode_scalar(buffer : &Vec<u8>, offset : usize, raw_size : usize) -> f32 {
-        return f32::from_le_bytes(buffer[offset..offset + raw_size].try_into().expect("Invalid scalar"));
-    }
-
-    fn decode_int(buffer : &Vec<u8>, offset : usize, raw_size : usize) -> u32 {
-        if raw_size == 1 {
-            return u8::from_le_bytes(buffer[offset..offset + raw_size].try_into().expect("Invalid index")) as u32;
-        } else if raw_size == 2 {
-            return u16::from_le_bytes(buffer[offset..offset + raw_size].try_into().expect("Invalid index")) as u32;
-        } else if raw_size == 4 {
-            return u32::from_le_bytes(buffer[offset..offset + raw_size].try_into().expect("Invalid index"));
-        }
-        return 0;
     }
 
     fn load_gltf_material(&mut self, context : &GLTFContext, material: gltf::material::Material) -> Arc<dyn Material> {
@@ -233,7 +156,7 @@ impl Scene {
                             let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
                             match attribute.0 {
                                 gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                                    let mut decoded_triangle = Self::decode_triangle_vec3_indexed(
+                                    let mut decoded_triangle = decode_triangle_vec3_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
@@ -247,7 +170,7 @@ impl Scene {
                                     };
                                 },
                                 gltf::Semantic::TexCoords(set) => {
-                                    let decoded_triangle = Self::decode_triangle_vec2_indexed(
+                                    let decoded_triangle = decode_triangle_vec2_indexed(
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
@@ -282,7 +205,7 @@ impl Scene {
                                 let pos_raw_indices_data_pos = indices_buffer_view.offset() + indices_buffer_pos;
                                 match attribute.0 {
                                     gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                                        let mut decoded_triangle = Self::decode_triangle_vec3_indexed(
+                                        let mut decoded_triangle = decode_triangle_vec3_indexed(
                                             buffer, buffer_view.offset(), stride, raw_type.size(),
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
@@ -296,7 +219,7 @@ impl Scene {
                                         };
                                     },
                                     gltf::Semantic::TexCoords(set) => {
-                                        let decoded_triangle = Self::decode_triangle_vec2_indexed(
+                                        let decoded_triangle = decode_triangle_vec2_indexed(
                                             buffer, buffer_view.offset(), stride, raw_type.size(),
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
@@ -318,7 +241,7 @@ impl Scene {
 
                                 match attribute.0 {
                                     gltf::Semantic::Positions | gltf::Semantic::Normals => {
-                                        let mut decoded_triangle =  Self::decode_triangle_vec3(
+                                        let mut decoded_triangle =  decode_triangle_vec3(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
 
@@ -331,7 +254,7 @@ impl Scene {
                                         };
                                     },
                                     gltf::Semantic::TexCoords(set) => {
-                                        let decoded_triangle = Self::decode_triangle_vec2(
+                                        let decoded_triangle = decode_triangle_vec2(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
                                         uvs.push(decoded_triangle);
@@ -391,7 +314,7 @@ impl Scene {
             }
         }
 
-        context.decoded_images.resize(gltf.images().count(), Texture::new(0, 0, Arc::new(Vec::new())));
+        context.decoded_images.resize(gltf.images().count(), Texture::null());
         for image in gltf.images() {
             let mut image_raw_data = Vec::new();
 
@@ -411,9 +334,23 @@ impl Scene {
                 Ok(value) => {
                     match value.decode() {
                         Ok(value) => {
+                            let (bytes_per_component, components_per_pixel) = match value.color() {
+                                ColorType::L8 => (1, 1),
+                                ColorType::La8 => (1, 2),
+                                ColorType::Rgb8 => (1, 3),
+                                ColorType::Rgba8 => (1, 4),
+                                ColorType::Bgra8 => (1, 4),
+                                ColorType::Bgr8 => (1, 3),
+                                ColorType::L16 => (2, 1),
+                                ColorType::La16 => (2, 2),
+                                ColorType::Rgb16 => (2, 3),
+                                ColorType::Rgba16 => (2, 4),
+                                _ => (0, 0)
+                            };
+
                             context.decoded_images[image.index()] = Texture::new(
-                                value.width(),
-                                value.height(),
+                                vec![value.width(), value.height()],
+                                bytes_per_component, components_per_pixel,
                                 Arc::new(value.into_bytes())
                             );
                         },

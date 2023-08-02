@@ -28,11 +28,11 @@ impl PBRMaterial {
     pub fn new() -> Self {
         Self {
             pbr_metallic_roughness: PBRMetallicRoughnessMaterial::new(),
-            normal_texture:  Arc::new(Texture2D::new(Texture::new(0, 0, Arc::new(Vec::new())))),
+            normal_texture:  Arc::new(Texture2D::new(Texture::null())),
             normal_texture_sampler: Sampler::new(),
-            occlusion_texture:  Arc::new(Texture2D::new(Texture::new(0, 0, Arc::new(Vec::new())))),
+            occlusion_texture:  Arc::new(Texture2D::new(Texture::null())),
             occlusion_texture_sampler: Sampler::new(),
-            emissive_texture:  Arc::new(Texture2D::new(Texture::new(0, 0, Arc::new(Vec::new())))),
+            emissive_texture:  Arc::new(Texture2D::new(Texture::null())),
             emissive_texture_sampler: Sampler::new(),
             emissive_factor: Vec3A::ZERO,
         }

@@ -4,10 +4,58 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug Rust",
+            "name": "Debug unit tests in library 'pupsy_raytracing_engine'",
             "cargo": {
-              "args": ["build", "--manifest-path", "${workspaceFolder}/Cargo.toml"]
-            }
-          }
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pupsy_raytracing_engine"
+                ],
+                "filter": {
+                    "name": "pupsy_raytracing_engine",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'pupsy_raytracing_engine'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=pupsy_raytracing_engine",
+                    "--package=pupsy_raytracing_engine"
+                ],
+                "filter": {
+                    "name": "pupsy_raytracing_engine",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'pupsy_raytracing_engine'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=pupsy_raytracing_engine",
+                    "--package=pupsy_raytracing_engine"
+                ],
+                "filter": {
+                    "name": "pupsy_raytracing_engine",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
     ]
 }
