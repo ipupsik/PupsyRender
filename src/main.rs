@@ -43,8 +43,8 @@ fn main() {
     // Build bvh
     scene.build_bvh();
 
-    let render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 100,
-        max_depth : 50});
+    let render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 10,
+        max_depth : 5});
 
     let renderer = Renderer{};
 

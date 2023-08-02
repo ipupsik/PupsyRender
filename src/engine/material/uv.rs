@@ -16,6 +16,6 @@ impl Material for UVMaterial {
     }
 
     fn sample(&self, hit_result : &HitResult) -> Vec3A {
-        Vec3A::new(hit_result.uv.x, hit_result.uv.y, 1.0 - hit_result.uv.x - hit_result.uv.y)
+        Vec3A::new(hit_result.uvs[0].x, hit_result.uvs[0].y, 1.0 - hit_result.uvs[0].x - hit_result.uvs[0].y)
     }
 }

@@ -8,6 +8,7 @@ use crate::engine::material::metal::*;
 use crate::engine::material::normal::*;
 use crate::engine::material::refraction::*;
 use crate::engine::material::pbr::*;
+use std::collections::HashMap;
 use crate::engine::material::pbr_metallic_roughness::*;
 use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
@@ -66,14 +67,15 @@ impl Scene {
         self.bvh = Node::new(&self.geometry, 0, self.geometry.len());
     }
 
-    fn load_gltf_material(&mut self, context : &GLTFContext, material: gltf::material::Material) -> Arc<dyn Material> {
+    fn load_gltf_material(&mut self, context : &mut GLTFContext, material: gltf::material::Material) -> Arc<dyn Material> {
         let mut pbr_material = PBRMaterial::new();
 
         let pbr_metallic_roughness = material.pbr_metallic_roughness();
         let pbr_base_color_texture_option = pbr_metallic_roughness.base_color_texture();
         if pbr_base_color_texture_option.is_some() {
-            let pbr_base_color_texture = pbr_base_color_texture_option.unwrap();
-            let image = &context.decoded_images[pbr_base_color_texture.texture().index()];
+            let base_color_texture = pbr_base_color_texture_option.unwrap();
+            let image = &mut context.decoded_images[base_color_texture.texture().index()];
+            image.set_uv_index(base_color_texture.tex_coord() as usize);
             pbr_material.pbr_metallic_roughness.base_color_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let pbr_base_color_factor = pbr_metallic_roughness.base_color_factor();
@@ -81,8 +83,9 @@ impl Scene {
 
         let pbr_metalic_roughness_texture_option = pbr_metallic_roughness.metallic_roughness_texture();
         if pbr_metalic_roughness_texture_option.is_some() {
-            let pbr_metalic_roughness_texture = pbr_metalic_roughness_texture_option.unwrap();
-            let image = &context.decoded_images[pbr_metalic_roughness_texture.texture().index()];
+            let metalic_roughness_texture = pbr_metalic_roughness_texture_option.unwrap();
+            let image = &mut context.decoded_images[metalic_roughness_texture.texture().index()];
+            image.set_uv_index(metalic_roughness_texture.tex_coord() as usize);
             pbr_material.pbr_metallic_roughness.metalic_roughness_texture = Arc::new(Texture2D::new(image.clone()));
         }
 
@@ -92,19 +95,22 @@ impl Scene {
         let normal_texture_option = material.normal_texture();
         if normal_texture_option.is_some() {
             let normal_texture = normal_texture_option.unwrap();
-            let image = &context.decoded_images[normal_texture.texture().index()];
+            let mut image = &mut context.decoded_images[normal_texture.texture().index()];
+            image.set_uv_index(normal_texture.tex_coord() as usize);
             pbr_material.normal_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let occlusion_texture_option = material.occlusion_texture();
         if occlusion_texture_option.is_some() {
             let occlusion_texture = occlusion_texture_option.unwrap();
-            let image = &context.decoded_images[occlusion_texture.texture().index()];
+            let image = &mut context.decoded_images[occlusion_texture.texture().index()];
+            image.set_uv_index(occlusion_texture.tex_coord() as usize);
             pbr_material.occlusion_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let emissive_texture_option = material.emissive_texture();
         if emissive_texture_option.is_some() {
             let emissive_texture = emissive_texture_option.unwrap();
-            let image = &context.decoded_images[emissive_texture.texture().index()];
+            let image = &mut context.decoded_images[emissive_texture.texture().index()];
+            image.set_uv_index(emissive_texture.tex_coord() as usize);
             pbr_material.emissive_texture = Arc::new(Texture2D::new(image.clone()));
         }
         pbr_material.emissive_factor = Vec3A::from(material.emissive_factor());
@@ -112,7 +118,7 @@ impl Scene {
         Arc::new(pbr_material)
     }
 
-    fn load_gltf_node(&mut self, context : &GLTFContext, node: &gltf::Node, matrix: &Mat4) {
+    fn load_gltf_node(&mut self, context : &mut GLTFContext, node: &gltf::Node, matrix: &Mat4) {
         let node_transform_matrix = node.transform().matrix();
         let new_matrix = matrix.mul_mat4(&Mat4::from_cols_array_2d(&node_transform_matrix));
 
@@ -122,7 +128,7 @@ impl Scene {
 
             for primitive in gltf_mesh.primitives() {
                 let mut positions: Vec<[Vec3A; 3]> = Vec::new();
-                let mut uvs: Vec<[Vec2; 3]> = Vec::new();
+                let mut uvs: Vec<[Vec3A; 3]> = Vec::new();
                 let mut normals: Vec<[Vec3A; 3]> = Vec::new();
 
                 for attribute in primitive.attributes() {
@@ -174,7 +180,12 @@ impl Scene {
                                         buffer, buffer_view.offset(), stride, raw_type.size(),
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
-                                    uvs.push(decoded_triangle);
+
+                                    uvs.push([
+                                        Vec3A::from((decoded_triangle[0], set as f32)),
+                                        Vec3A::from((decoded_triangle[1], set as f32)), 
+                                        Vec3A::from((decoded_triangle[2], set as f32)),  
+                                        ]);
                                 },
                                 _ => {
                                     println!("Unhandled attribute");
@@ -224,7 +235,11 @@ impl Scene {
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
 
-                                        uvs.push(decoded_triangle);
+                                        uvs.push([
+                                            Vec3A::from((decoded_triangle[0], set as f32)),
+                                            Vec3A::from((decoded_triangle[1], set as f32)), 
+                                            Vec3A::from((decoded_triangle[2], set as f32)),  
+                                            ]);
                                     },
                                     _ => {
                                         println!("Unhandled attribute");
@@ -257,7 +272,12 @@ impl Scene {
                                         let decoded_triangle = decode_triangle_vec2(
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
-                                        uvs.push(decoded_triangle);
+
+                                        uvs.push([
+                                            Vec3A::from((decoded_triangle[0], set as f32)),
+                                            Vec3A::from((decoded_triangle[1], set as f32)), 
+                                            Vec3A::from((decoded_triangle[2], set as f32)),  
+                                            ]);
                                     },
                                     _ => {
                                         println!("Unhandled attribute");
@@ -273,17 +293,28 @@ impl Scene {
 
                 let material = self.load_gltf_material(context, primitive.material());
 
-                assert!(positions.len() == uvs.len());
-                assert!(uvs.len() == normals.len());
+                assert!(positions.len() == 0 || positions.len() == normals.len());
+                assert!(normals.len() == 0||  uvs.len() % normals.len() == 0);
                 let triangles_count = positions.len();
 
                 let mut mesh_triangles: Vec<Arc<Box<dyn Traceable>>> = Vec::new();
                 mesh_triangles.reserve(triangles_count);
 
                 for i in 0..triangles_count {
-                    let vertex1 = Vertex::new(positions[i][0], normals[i][0], uvs[i][0]);
-                    let vertex2 = Vertex::new(positions[i][1], normals[i][1], uvs[i][1]);
-                    let vertex3 = Vertex::new(positions[i][2], normals[i][2], uvs[i][2]);
+                    let uvs_count = uvs.len() / triangles_count;
+
+                    let mut uvs1 = Vec::new();
+                    let mut uvs2 = Vec::new();
+                    let mut uvs3 = Vec::new();
+                    for j in 0..uvs_count {
+                        uvs1.push(uvs[j * triangles_count + i][0]);
+                        uvs2.push(uvs[j * triangles_count + i][1]);
+                        uvs3.push(uvs[j * triangles_count + i][2]);
+                    }
+
+                    let vertex1 = Vertex::new(positions[i][0], normals[i][0], uvs1);
+                    let vertex2 = Vertex::new(positions[i][1], normals[i][1], uvs2);
+                    let vertex3 = Vertex::new(positions[i][2], normals[i][2], uvs3);
 
                     self.geometry.push(Arc::new(Triangle::new(material.clone(), vertex1, vertex2, vertex3)));
                 }
@@ -351,7 +382,6 @@ impl Scene {
                             context.decoded_images[image.index()] = Texture::new(
                                 vec![value.width(), value.height()],
                                 bytes_per_component, components_per_pixel,
-                                //Arc::new(value.into_bytes())
                                 value
                             );
                         },
@@ -368,7 +398,7 @@ impl Scene {
 
         for scene in gltf.scenes() {
             for node in scene.nodes() {
-                self.load_gltf_node(&context, &node, &Mat4::IDENTITY);
+                self.load_gltf_node(&mut context, &node, &Mat4::IDENTITY);
             }
         }
     }
@@ -386,11 +416,11 @@ impl Scene {
             UVMaterial{}
         );
 
-        self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 0.5, position : Vec3A::new(1.7, 0.0, 0.6)}));
+        //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 0.5, position : Vec3A::new(1.7, 0.0, 0.6)}));
         self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
-        self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
-        self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
-        self.geometry.push(Arc::new(Sphere{material: refraction_material.clone(), radius : 0.5, position : Vec3A::new(-1.3, 0.15, 0.5)}));
+        //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
+        //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
+        //self.geometry.push(Arc::new(Sphere{material: refraction_material.clone(), radius : 0.5, position : Vec3A::new(-1.3, 0.15, 0.5)}));
 
         self.materials.push(diffuse_material.clone());
         self.materials.push(metal_material.clone());
@@ -400,7 +430,8 @@ impl Scene {
 
         // gltf
         //self.load_gltf("example1.gltf");
-        self.load_gltf("example2.gltf");
+        //self.load_gltf("example2.gltf");
+        self.load_gltf("example3.gltf");
     }
 }
 

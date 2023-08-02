@@ -5,6 +5,7 @@ use crate::engine::material::*;
 use std::sync::*;
 use super::bvh::aabb::*;
 use glam::{Vec2, Vec3A};
+use std::collections::HashMap;
 
 pub trait Traceable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
@@ -15,7 +16,7 @@ pub struct HitResult {
     pub position: Vec3A,
     pub t: f32,
     pub normal: Vec3A,
-    pub uv: Vec2,
+    pub uvs: Vec<Vec3A>,
     pub front_face: bool,
     pub material: Arc<dyn Material>,
 }
@@ -26,7 +27,7 @@ impl HitResult {
             position: Vec3A::new(0.0, 0.0, 0.0),
             t: f32::MAX,
             normal: Vec3A::new(0.0, 0.0, 0.0),
-            uv: Vec2::ZERO,
+            uvs: Vec::new(),
             front_face: true,
             material: Arc::new(DiffuseMaterial{})
         }

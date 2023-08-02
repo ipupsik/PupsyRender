@@ -2,6 +2,7 @@ use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use crate::engine::geometry::vertex::*;
 use glam::{Vec2, Vec3A};
+use std::collections::HashMap;
 use super::bvh::aabb::*;
 use crate::engine::material::*;
 use std::sync::*;
@@ -59,11 +60,15 @@ impl Traceable for Triangle {
             return None;
         }
 
-        let uv = self.vertices[0].uv * (1.0 - v - u) + self.vertices[1].uv * u + self.vertices[2].uv * v;
+        let mut uvs = self.vertices[0].uvs.clone();
+        for uv in uvs.iter_mut() {
+            *uv = self.vertices[0].uvs[uv.z as usize] * (1.0 - v - u) + self.vertices[1].uvs[uv.z as usize] * u + self.vertices[2].uvs[uv.z as usize] * v;
+        }
+        
         let normal = self.vertices[0].normal * (1.0 - v - u) + self.vertices[1].normal * u + self.vertices[2].normal * v;
 
         return Some(HitResult { position: ray.at(t), t: t, normal: normal, 
-            uv: uv, front_face: front_face, material: self.material.clone() });
+            uvs: uvs, front_face: front_face, material: self.material.clone() });
     }
 
     fn bounding_box(&self) -> AABB {

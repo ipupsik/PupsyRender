@@ -50,6 +50,11 @@ impl Material for PBRMaterial {
     }
 
     fn sample(&self, hit_result : &HitResult) -> Vec3A {
-        return self.pbr_metallic_roughness.sample(hit_result);
+        let mut final_color = self.pbr_metallic_roughness.sample(hit_result);
+        final_color += Vec3A::from(self.emissive_texture.sample(
+            &self.emissive_texture_sampler, 
+            self.emissive_texture.texture.get_uv_by_index(&hit_result.uvs)
+        ));
+        return final_color;
     }
 }

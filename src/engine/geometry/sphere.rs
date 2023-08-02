@@ -4,7 +4,7 @@ use glam::{Vec2, Vec3A};
 use super::bvh::aabb::*;
 use crate::engine::material::*;
 
-use std::sync::*;
+use std::{sync::*, collections::HashMap};
 
 pub struct Sphere {
     pub material: Arc<dyn Material>,
@@ -45,7 +45,7 @@ impl Traceable for Sphere {
         }
 
         Some(HitResult{position : position, t : t, normal : normal, 
-            uv: Vec2::ZERO, front_face: front_face, material: self.material.clone()})
+            uvs: Vec::new(), front_face: front_face, material: self.material.clone()})
     }
 
     fn bounding_box(&self) -> AABB {

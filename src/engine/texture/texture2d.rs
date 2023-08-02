@@ -1,11 +1,12 @@
 use crate::engine::sampler::*;
 use crate::engine::texture::*;
+use std::collections::HashMap;
 use std::sync::*;
 use glam::{Vec2, Vec3A, Vec4};
 use image::GenericImageView;
 
 pub struct Texture2D {
-    texture: Texture
+    pub texture: Texture
 }
 
 impl Texture2D {
@@ -22,7 +23,7 @@ impl Texture2D {
     }
 
     pub fn sample(&self, sampler : &Sampler, uv: Vec2) -> Vec4 {
-        uv.clamp(Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0));
+        let uv = uv.fract();
 
         let x = uv.x * (self.texture.dimensions[0] - 1) as f32;
         let y = uv.y * (self.texture.dimensions[1] - 1) as f32;

@@ -1,6 +1,7 @@
 pub mod texture2d;
 
 use std::sync::*;
+use glam::{Vec2, Vec3A};
 
 use image::DynamicImage;
 
@@ -9,8 +10,8 @@ pub struct Texture {
     dimensions: Vec<u32>,
     bytes_per_component: u32,
     components_per_pixel: i32,
-    //buffer: Arc<Vec<u8>>,
     raw_texture: DynamicImage,
+    uv_index: usize,
 }
 
 impl Texture {
@@ -19,8 +20,8 @@ impl Texture {
             dimensions: vec![],
             bytes_per_component: 0,
             components_per_pixel: 0,
-            //buffer: Arc::new(Vec::new()),
             raw_texture: DynamicImage::new_bgr8(0, 0),
+            uv_index: 0,
         }
     }
 
@@ -30,8 +31,21 @@ impl Texture {
             dimensions: dimensions,
             bytes_per_component: bytes_per_component, 
             components_per_pixel: components_per_pixel,
-            //buffer: buffer.clone(),
             raw_texture: raw_texture,
+            uv_index: 0,
         }
+    }
+
+    pub fn set_uv_index(&mut self, uv_index: usize) {
+        self.uv_index = uv_index;
+    }
+
+    pub fn get_uv_by_index(&self, uvs: &Vec<Vec3A>) -> Vec2{
+        for uv in uvs.iter() {
+            if uv.z as usize == self.uv_index {
+                return Vec2::new(uv.x, uv.y);
+            }
+        }
+        return Vec2::ZERO;
     }
 }
