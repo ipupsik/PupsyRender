@@ -11,7 +11,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
-    const IMAGE_HEIGHT: u32 = 256;
+    const IMAGE_HEIGHT: u32 = 512;
     const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
 
     const VIEWPORT_HEIGHT: f32 = 3.8;
@@ -43,28 +43,26 @@ fn main() {
     // Build bvh
     scene.build_bvh();
 
-    let mut render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 5,
-        max_depth : 3});
+    let render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 100,
+        max_depth : 50});
 
     let renderer = Renderer{};
 
     let mut frame_buffer = Vec::new();
-    unsafe {
-        renderer.render(camera.clone(), render_context.clone(), &mut frame_buffer);
+    renderer.render(camera.clone(), render_context.clone(), &mut frame_buffer);
 
-        for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
-            let mut linear_index = (y * render_context.render_target.width + x) as usize;
-            for chunk in frame_buffer.iter() {
-                if linear_index < chunk.len() {
-                    let scene_color = chunk[linear_index];
+    for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
+        let mut linear_index = (y * render_context.render_target.width + x) as usize;
+        for chunk in frame_buffer.iter() {
+            if linear_index < chunk.len() {
+                let scene_color = chunk[linear_index];
 
-                    *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
-                    break;
-                }
-                linear_index -= chunk.len();
+                *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
+                break;
             }
+            linear_index -= chunk.len();
         }
-
-        rgb_frame_buffer.save("image.png").unwrap();
     }
+
+    rgb_frame_buffer.save("image.png").unwrap();
 }

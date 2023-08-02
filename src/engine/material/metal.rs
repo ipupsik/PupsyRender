@@ -14,9 +14,9 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for MetalMaterial {
-    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Option<Vec3A> {
+    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Vec3A {
         let direction = reflect(ray.direction, hit_result.normal) + (1.0 - self.metalness) * random_in_unit_sphere();
-        Some(direction.normalize())
+        direction.normalize()
     }
 
     fn sample(&self, hit_result : &HitResult) -> Vec3A {

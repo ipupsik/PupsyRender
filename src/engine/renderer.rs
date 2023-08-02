@@ -42,18 +42,13 @@ impl Renderer {
 
         let hit_result = hit_result_option.unwrap();
 
-        let sample = hit_result.material.sample(&hit_result);
-
         if depth > 1 {
-            let scatter_option = hit_result.material.scatter(ray, &hit_result);
+            let sample = hit_result.material.sample(&hit_result);
+            let scatter = hit_result.material.scatter(ray, &hit_result);
 
-            if scatter_option.is_some() {
-                let scatter_vector = scatter_option.unwrap();
-
-                let new_ray = Ray{origin : hit_result.position, direction : scatter_vector};
-                if depth > 1 {
-                    return 0.8 * Self::sample_scene(&new_ray, bvh, depth - 1) * sample;
-                }
+            let new_ray = Ray{origin : hit_result.position, direction : scatter};
+            if depth > 1 {
+                return 0.8 * Self::sample_scene(&new_ray, bvh, depth - 1) * sample;
             }
         }
 

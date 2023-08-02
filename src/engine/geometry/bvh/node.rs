@@ -18,7 +18,6 @@ impl Node {
     pub fn new(objects: &Vec<Arc<dyn Traceable>>, min_index: usize, max_index: usize) -> Self {
         let mut objects = objects.clone(); // Create a modifiable array of the source scene objects
         let axis = rand::thread_rng().gen_range(0..2);
-        let comp = |a, b| AABB::cmp(a, b, axis);
 
         let count = max_index - min_index;
 
@@ -28,17 +27,6 @@ impl Node {
         if count == 1 {
             left = objects[min_index].clone();
             right = left.clone();
-        } else if count == 2 {
-            match comp(&objects[min_index], &objects[min_index+1]) {
-                Ordering::Less => {
-                    left = objects[min_index].clone();
-                    right = objects[min_index + 1].clone();
-                },
-                _ => {
-                    right = objects[min_index].clone();
-                    left = objects[min_index + 1].clone();
-                },
-            }
         } else if count > 0 {
             let mid = min_index + count / 2;
 
@@ -59,7 +47,7 @@ impl Node {
 
 impl Traceable for Node {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
-        if !self.aabb.hit(ray, t_min, t_max).is_some() {
+        if !self.bounding_box().hit(ray, t_min, t_max).is_some() {
             return None;
         }
 

@@ -16,6 +16,6 @@ use std::rc::*;
 use std::sync::{Arc};
 
 pub trait Material {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> Option<Vec3A>;
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A;
     fn sample(&self, hit_result : &HitResult) -> Vec3A;
 }
