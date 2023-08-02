@@ -48,7 +48,7 @@ impl Material for PBRMetallicRoughnessMaterial {
     fn sample(&self, hit_result : &HitResult) -> Vec3A {
         let mut sample = self.base_color_factor;
         sample = sample * self.base_color_texture.sample(&self.base_color_texture_sampler, hit_result.uv);
-        sample = Vec4::from((hit_result.uv, 0.0, 0.0));
+        //sample = Vec4::from((hit_result.uv, 0.0, 0.0));
         return Vec3A::from(sample);
     }
 }

@@ -351,7 +351,8 @@ impl Scene {
                             context.decoded_images[image.index()] = Texture::new(
                                 vec![value.width(), value.height()],
                                 bytes_per_component, components_per_pixel,
-                                Arc::new(value.into_bytes())
+                                //Arc::new(value.into_bytes())
+                                value
                             );
                         },
                         Err(error) => {
