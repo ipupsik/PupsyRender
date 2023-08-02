@@ -16,23 +16,22 @@ pub struct Node {
 
 impl Node {
     pub fn new(objects: &Vec<Arc<dyn Traceable>>, min_index: usize, max_index: usize) -> Self {
-        let objects = objects.clone(); // Create a modifiable array of the source scene objects
-
-        let rand_axis = rand::thread_rng().gen_range(0..2);
-
+        //let objects = objects.clone(); // Create a modifiable array of the source scene objects
+        //let rand_axis = rand::thread_rng().gen_range(0..2);
         // Sort by axis
 
         let count = max_index - min_index;
-        let left;
-        let right;
+
+        let mut left: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO));
+        let mut right: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO));
 
         if count == 1 {
             left = objects[min_index].clone();
             right = left.clone();
         } else if count == 2 {
             left = objects[min_index].clone();
-            right = objects[max_index].clone();
-        } else {
+            right = objects[max_index - 1].clone();
+        } else if count > 0 {
             let mid = min_index + count / 2;
 
             left =  Arc::new(Self::new(&objects, min_index, mid));
@@ -55,18 +54,18 @@ impl Traceable for Node {
         }
 
         let left_hit_option = self.left.hit(ray, t_min, t_max);
+        if left_hit_option.is_some() {
+            let left_hit = left_hit_option.unwrap();
 
-        let right_hit_option = self.right.hit(ray, t_min, t_max);
-        if right_hit_option.is_some() {
+            let right_hit_option = self.right.hit(ray, t_min, left_hit.t);
             if right_hit_option.is_some() {
-                let right_hit = right_hit_option.unwrap();
-                let left_hit = left_hit_option.unwrap();
-                if left_hit.t < right_hit.t {return Some(left_hit)} else {return Some(right_hit)};
+                return right_hit_option;
             }
-            return right_hit_option;
+
+            return Some(left_hit);
         }
 
-        return left_hit_option;
+        return self.right.hit(ray, t_min, t_max);
     }
 
     fn bounding_box(&self) -> AABB {

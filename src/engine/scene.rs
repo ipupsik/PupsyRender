@@ -12,6 +12,7 @@ use crate::engine::material::pbr_metallic_roughness::*;
 use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::texture::*;
+use crate::engine::bvh::node::*;
 
 use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;
@@ -33,6 +34,7 @@ pub struct Scene {
     pub geometry: Vec<Arc<dyn Traceable>>,
     pub materials: Vec<Arc<dyn Material>>,
     pub textures: Vec<Arc<Texture>>,
+    pub bvh: Node,
 }
 
 struct GLTFContext {
@@ -50,12 +52,17 @@ impl GLTFContext {
 }
 
 impl Scene {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self { 
+            bvh: Node::new(&Vec::new(), 0, 0),
             geometry : Vec::new(),
             materials : Vec::new(),
             textures : Vec::new(),
         }
+    }
+
+    pub fn build_bvh(&mut self) {
+        self.bvh = Node::new(&self.geometry, 0, self.geometry.len());
     }
 
     fn decode_triangle_vec3_indexed(

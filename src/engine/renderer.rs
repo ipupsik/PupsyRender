@@ -4,8 +4,10 @@ use crate::engine::math::ray::*;
 use glam::{Vec3A};
 use crate::engine::scene::*;
 use crate::engine::geometry::traceable::HitResult;
+use crate::engine::bvh::node::*;
 use rand::Rng;
 
+use super::geometry::traceable::Traceable;
 use super::material::Material;
 use super::material::diffuse::*;
 
@@ -30,38 +32,27 @@ impl Renderer {
        input / (Vec3A::ONE + input)
     }
 
-    fn sample_scene(ray : &Ray, scene : &Scene, depth : u64) -> Vec3A {
-        let mut success = false;
-        let mut min_hit_result = HitResult::new();
+    fn sample_scene(ray : &Ray, bvh : &Node, depth : u64) -> Vec3A {
+        let hit_result_option = bvh.hit(ray, 0.001, f32::MAX);
 
-        for traceable in scene.geometry.iter() {
-            let hit_option: Option<HitResult>  = traceable.hit(ray, 0.001, f32::MAX);
-
-            if hit_option.is_some() {
-                let hit_result = hit_option.unwrap();
-                if hit_result.t < min_hit_result.t {
-                    success = true;
-                    min_hit_result = hit_result;
-                }
-            }
-        }
-
-        if !success {
+        if !hit_result_option.is_some() {
             let t = 0.5 * (ray.direction.y + 1.0);
             return (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
         }
 
-        let sample = min_hit_result.material.sample(&min_hit_result);
+        let hit_result = hit_result_option.unwrap();
+
+        let sample = hit_result.material.sample(&hit_result);
 
         if depth > 1 {
-            let scatter_option = min_hit_result.material.scatter(ray, &min_hit_result);
+            let scatter_option = hit_result.material.scatter(ray, &hit_result);
 
             if scatter_option.is_some() {
                 let scatter_vector = scatter_option.unwrap();
 
-                let new_ray = Ray{origin : min_hit_result.position, direction : scatter_vector};
+                let new_ray = Ray{origin : hit_result.position, direction : scatter_vector};
                 if depth > 1 {
-                    return 0.8 * Self::sample_scene(&new_ray, scene, depth - 1) * sample;
+                    return 0.8 * Self::sample_scene(&new_ray, bvh, depth - 1) * sample;
                 }
             }
         }
@@ -69,10 +60,12 @@ impl Renderer {
         Vec3A::ZERO
     }
 
-    pub fn render(&self, camera : &'static Camera, render_context : &'static RenderContext, output_frame_buffer: &mut Vec<Vec<Vec3A>>) {
+    pub fn render(&self, camera : Arc<Camera>, render_context : Arc<RenderContext>, output_frame_buffer: &mut Vec<Vec<Vec3A>>) {
+        // Parallel our work
         let frame_buffer_len = (render_context.render_target.width * render_context.render_target.height) as usize;
 
-        let num_cores = num_cpus::get();
+        let num_cores = 1;
+        //let num_cores = num_cpus::get();
         let chunk_size = frame_buffer_len / num_cores;
 
         let mut threads = Vec::with_capacity(num_cores);
@@ -114,7 +107,7 @@ impl Renderer {
                             let ray = camera.get_ray(u, 1.0 - v);
             
                             let mut current_sample = Self::sample_scene(&ray, 
-                                &render_context.scene, render_context.max_depth);
+                                &render_context.scene.bvh, render_context.max_depth);
          
                             scene_color = scene_color + current_sample / render_context.spp as f32;
                         }

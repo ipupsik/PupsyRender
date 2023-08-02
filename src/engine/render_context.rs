@@ -10,7 +10,7 @@ pub struct RenderContext {
 }
 
 impl RenderContext {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             render_target: RenderTarget::new(),
             scene: Scene::new(),
