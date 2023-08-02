@@ -3,7 +3,7 @@ use std::option::Option;
 use crate::engine::{math::ray::*, material::diffuse::DiffuseMaterial};
 use crate::engine::material::*;
 use std::sync::*;
-use crate::engine::bvh::aabb::*;
+use super::bvh::aabb::*;
 use glam::{Vec2, Vec3A};
 
 pub trait Traceable {

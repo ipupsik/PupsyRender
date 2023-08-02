@@ -12,7 +12,7 @@ use crate::engine::material::pbr_metallic_roughness::*;
 use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::texture::*;
-use crate::engine::bvh::node::*;
+use crate::engine::geometry::bvh::node::*;
 
 use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;

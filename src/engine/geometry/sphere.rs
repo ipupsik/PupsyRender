@@ -1,7 +1,7 @@
 use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use glam::{Vec2, Vec3A};
-use crate::engine::bvh::aabb::*;
+use super::bvh::aabb::*;
 use crate::engine::material::*;
 
 use std::sync::*;

@@ -5,8 +5,8 @@ use glam::{Vec2, Vec3A};
 use std::mem;
 use std::sync::*;
 use super::aabb::*;
+use std::cmp::Ordering;
 use rand::{Rng};
-use crate::engine::bvh::*;
 
 pub struct Node {
     left: Arc<dyn Traceable>,
@@ -16,9 +16,9 @@ pub struct Node {
 
 impl Node {
     pub fn new(objects: &Vec<Arc<dyn Traceable>>, min_index: usize, max_index: usize) -> Self {
-        //let objects = objects.clone(); // Create a modifiable array of the source scene objects
-        //let rand_axis = rand::thread_rng().gen_range(0..2);
-        // Sort by axis
+        let mut objects = objects.clone(); // Create a modifiable array of the source scene objects
+        let axis = rand::thread_rng().gen_range(0..2);
+        let comp = |a, b| AABB::cmp(a, b, axis);
 
         let count = max_index - min_index;
 
@@ -29,10 +29,20 @@ impl Node {
             left = objects[min_index].clone();
             right = left.clone();
         } else if count == 2 {
-            left = objects[min_index].clone();
-            right = objects[max_index - 1].clone();
+            match comp(&objects[min_index], &objects[min_index+1]) {
+                Ordering::Less => {
+                    left = objects[min_index].clone();
+                    right = objects[min_index + 1].clone();
+                },
+                _ => {
+                    right = objects[min_index].clone();
+                    left = objects[min_index + 1].clone();
+                },
+            }
         } else if count > 0 {
             let mid = min_index + count / 2;
+
+            objects.sort_by(|a, b| AABB::cmp(a, b, axis));
 
             left =  Arc::new(Self::new(&objects, min_index, mid));
             right = Arc::new(Self::new(&objects, mid, max_index));

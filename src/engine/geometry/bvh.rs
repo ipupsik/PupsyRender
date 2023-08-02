@@ -1,5 +1,5 @@
 use crate::engine::geometry::traceable::*;
-use crate::engine::bvh::aabb::*;
+use super::bvh::aabb::*;
 use std::sync::*;
 
 pub mod aabb;

@@ -4,7 +4,7 @@ use crate::engine::math::ray::*;
 use glam::{Vec3A};
 use crate::engine::scene::*;
 use crate::engine::geometry::traceable::HitResult;
-use crate::engine::bvh::node::*;
+use crate::engine::geometry::bvh::node::*;
 use rand::Rng;
 
 use super::geometry::traceable::Traceable;
@@ -64,8 +64,8 @@ impl Renderer {
         // Parallel our work
         let frame_buffer_len = (render_context.render_target.width * render_context.render_target.height) as usize;
 
-        let num_cores = 1;
-        //let num_cores = num_cpus::get();
+        //let num_cores = 1;
+        let num_cores = num_cpus::get();
         let chunk_size = frame_buffer_len / num_cores;
 
         let mut threads = Vec::with_capacity(num_cores);

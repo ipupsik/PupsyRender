@@ -4,6 +4,7 @@ use crate::engine::geometry::vertex::*;
 use glam::{Vec2, Vec3A};
 use std::mem;
 use std::sync::*;
+use std::cmp::Ordering;
 
 #[derive(Copy, Clone)]
 pub struct AABB {
@@ -24,6 +25,19 @@ impl AABB {
             self.min.min(other_aabb.min),
             self.max.max(other_aabb.max),
         )
+    }
+
+    pub fn cmp<'a>(
+        a: &'a Arc<dyn Traceable>,
+        b: &'a Arc<dyn Traceable>,
+        axis: usize,
+    ) -> Ordering {
+        let mut box_a = AABB::new(Vec3A::ZERO, Vec3A::ZERO);
+        let mut box_b = AABB::new(Vec3A::ZERO, Vec3A::ZERO);
+
+        let a = box_a.min[axis];
+        let b = box_b.min[axis];
+        a.partial_cmp(&b).unwrap()
     }
 }
 
