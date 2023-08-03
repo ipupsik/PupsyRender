@@ -11,7 +11,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
-    const IMAGE_HEIGHT: u32 = 512;
+    const IMAGE_HEIGHT: u32 = 1024;
     const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
 
     let mut rgb_frame_buffer = ImageBuffer::new(IMAGE_WIDTH as u32, IMAGE_HEIGHT as u32);
@@ -33,8 +33,8 @@ fn main() {
     // Build bvh
     scene.build_bvh();
 
-    let render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 10,
-        max_depth : 5});
+    let render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 100,
+        max_depth : 50});
     let renderer = Renderer{};
 
     for (index, camera) in render_context.scene.cameras.iter().enumerate() {
