@@ -15,6 +15,7 @@ use crate::engine::texture::texture2d::*;
 use crate::engine::texture::*;
 use crate::engine::geometry::bvh::node::*;
 use crate::engine::math::utils::*;
+use crate::engine::camera::*;
 
 use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;
@@ -37,6 +38,7 @@ pub struct Scene {
     pub materials: Vec<Arc<dyn Material>>,
     pub textures: Vec<Arc<Texture>>,
     pub bvh: Node,
+    pub cameras: Vec<Arc<PerspectiveCamera>>
 }
 
 struct GLTFContext {
@@ -60,6 +62,7 @@ impl Scene {
             geometry : Vec::new(),
             materials : Vec::new(),
             textures : Vec::new(),
+            cameras: Vec::new(),
         }
     }
 
@@ -323,6 +326,38 @@ impl Scene {
             }
         }
 
+        let camera_option = node.camera();
+        if camera_option.is_some() {
+            let camera = camera_option.unwrap();
+            match camera.projection() {
+                gltf::camera::Projection::Orthographic(orthographic) => {
+                    /*self.cameras.push(Arc::new(
+                        OrthographicCamera::new()
+                    ))*/
+                },
+                gltf::camera::Projection::Perspective(perspective) => {
+                    let mut aspect_ratio = 1.0;
+                    if perspective.aspect_ratio().is_some() {
+                        aspect_ratio = perspective.aspect_ratio().unwrap();
+                    }
+                    let mut z_far = perspective.znear();
+                    if perspective.zfar().is_some() {
+                        z_far = perspective.zfar().unwrap();
+                    }
+
+                    self.cameras.push(Arc::new(
+                        PerspectiveCamera::new(
+                            &new_matrix,
+                            perspective.yfov(),
+                            aspect_ratio,
+                            perspective.znear(),
+                            z_far
+                        )
+                    ))
+                },
+            }
+        }
+
         for child in node.children() {
             self.load_gltf_node(context, &child, &new_matrix);
         }
@@ -332,8 +367,9 @@ impl Scene {
         let file = fs::File::open(path).unwrap();
         let reader = io::BufReader::new(file);
         let gltf = gltf::Gltf::from_reader(reader).unwrap();
-        
+
         let mut context = GLTFContext::new();
+
         context.decoded_buffers.resize(gltf.buffers().count(), Vec::new());
         for buffer in gltf.buffers() {
             match buffer.source() {
@@ -417,7 +453,7 @@ impl Scene {
         );
 
         //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 0.5, position : Vec3A::new(1.7, 0.0, 0.6)}));
-        self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
+        //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: refraction_material.clone(), radius : 0.5, position : Vec3A::new(-1.3, 0.15, 0.5)}));

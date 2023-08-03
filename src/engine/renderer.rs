@@ -55,7 +55,7 @@ impl Renderer {
         Vec3A::ZERO
     }
 
-    pub fn render(&self, camera : Arc<Camera>, render_context : Arc<RenderContext>, output_frame_buffer: &mut Vec<Vec<Vec3A>>) {
+    pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>, output_frame_buffer: &mut Vec<Vec<Vec3A>>) {
         // Parallel our work
         let frame_buffer_len = (render_context.render_target.width * render_context.render_target.height) as usize;
 
@@ -67,8 +67,6 @@ impl Renderer {
 
         let (tx, rx) =  mpsc::channel();
 
-        let camera = Arc::new(camera.clone());
-        let render_context = Arc::new(render_context.clone());
         for thr in 0..num_cores
         {
             let index_begin = thr * chunk_size;
@@ -81,8 +79,8 @@ impl Renderer {
             output_frame_buffer.push(Vec::new());
             output_frame_buffer[thr].reserve((index_end - index_begin) as usize);
 
-            let camera = Arc::clone(&camera);
-            let render_context = Arc::clone(&render_context);
+            let camera = Arc::new(camera.clone());
+            let render_context = Arc::new(render_context.clone());
 
             let tx =  tx.clone();
             threads.push(
