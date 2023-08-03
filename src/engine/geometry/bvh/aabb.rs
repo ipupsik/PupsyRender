@@ -45,20 +45,18 @@ impl Traceable for AABB {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let mut t_min = t_min;
         let mut t_max = t_max;
-        for i in 0..3 {
-            let inv_d = 1.0 / ray.direction[i];
-            let mut t0 = (self.min[i] - ray.origin[i]) * inv_d;
-            let mut t1 = (self.max[i] - ray.origin[i]) * inv_d;
-            if inv_d < 0.0 {
-                mem::swap(&mut t0, &mut t1);
-            }
-            t_min = f32::max(t_min, t0);
-            t_max = f32::min(t_max, t1);
-            if t_max <= t_min {
-                return None;
-            }
+
+        let t_min = (self.min - ray.origin) / ray.direction;
+        let t_max = (self.max - ray.origin) / ray.direction;
+        let t1 = t_min.min(t_max);
+        let t2 = t_min.max(t_max);
+        let t_near = t1.max_element();
+        let t_far = t2.min_element();
+
+        if t_near <= t_far && t_far >= 0.0 {
+            return Some(HitResult::new());
         }
-        return Some(HitResult::new());
+        return None;
     }
 
     fn bounding_box(&self) -> AABB {
