@@ -77,7 +77,7 @@ impl Scene {
         let pbr_base_color_texture_option = pbr_metallic_roughness.base_color_texture();
         if pbr_base_color_texture_option.is_some() {
             let base_color_texture = pbr_base_color_texture_option.unwrap();
-            let image = &mut context.decoded_images[base_color_texture.texture().index()];
+            let image = &mut context.decoded_images[base_color_texture.texture().source().index()];
             image.set_uv_index(base_color_texture.tex_coord() as usize);
             pbr_material.pbr_metallic_roughness.base_color_texture = Arc::new(Texture2D::new(image.clone()));
         }
@@ -87,7 +87,7 @@ impl Scene {
         let pbr_metalic_roughness_texture_option = pbr_metallic_roughness.metallic_roughness_texture();
         if pbr_metalic_roughness_texture_option.is_some() {
             let metalic_roughness_texture = pbr_metalic_roughness_texture_option.unwrap();
-            let image = &mut context.decoded_images[metalic_roughness_texture.texture().index()];
+            let image = &mut context.decoded_images[metalic_roughness_texture.texture().source().index()];
             image.set_uv_index(metalic_roughness_texture.tex_coord() as usize);
             pbr_material.pbr_metallic_roughness.metalic_roughness_texture = Arc::new(Texture2D::new(image.clone()));
         }
@@ -98,21 +98,21 @@ impl Scene {
         let normal_texture_option = material.normal_texture();
         if normal_texture_option.is_some() {
             let normal_texture = normal_texture_option.unwrap();
-            let mut image = &mut context.decoded_images[normal_texture.texture().index()];
+            let mut image = &mut context.decoded_images[normal_texture.texture().source().index()];
             image.set_uv_index(normal_texture.tex_coord() as usize);
             pbr_material.normal_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let occlusion_texture_option = material.occlusion_texture();
         if occlusion_texture_option.is_some() {
             let occlusion_texture = occlusion_texture_option.unwrap();
-            let image = &mut context.decoded_images[occlusion_texture.texture().index()];
+            let image = &mut context.decoded_images[occlusion_texture.texture().source().index()];
             image.set_uv_index(occlusion_texture.tex_coord() as usize);
             pbr_material.occlusion_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let emissive_texture_option = material.emissive_texture();
         if emissive_texture_option.is_some() {
             let emissive_texture = emissive_texture_option.unwrap();
-            let image = &mut context.decoded_images[emissive_texture.texture().index()];
+            let image = &mut context.decoded_images[emissive_texture.texture().source().index()];
             image.set_uv_index(emissive_texture.tex_coord() as usize);
             pbr_material.emissive_texture = Arc::new(Texture2D::new(image.clone()));
         }
@@ -467,7 +467,8 @@ impl Scene {
         // gltf
         //self.load_gltf("example1.gltf");
         //self.load_gltf("example2.gltf");
-        self.load_gltf("example3.gltf");
+        //self.load_gltf("example3.gltf");
+        self.load_gltf("example4.gltf");
     }
 }
 
