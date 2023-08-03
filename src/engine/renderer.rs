@@ -149,7 +149,7 @@ impl Renderer {
                 }
             }
         
-            rgb_frame_buffer.save(format!("{}.png", camera.name)).unwrap();
+            rgb_frame_buffer.save(format!("example/{}.png", camera.name)).unwrap();
         }
 
         for thr in threads

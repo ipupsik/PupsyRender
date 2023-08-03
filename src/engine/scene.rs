@@ -471,10 +471,10 @@ impl Scene {
         self.materials.push(uv_material.clone());
 
         // gltf
-        //self.load_gltf("example1.gltf");
-        //self.load_gltf("example2.gltf");
-        self.load_gltf("example3.gltf");
-        //self.load_gltf("example4.gltf");
+        //self.load_gltf("example/example1.gltf");
+        //self.load_gltf("example/example2.gltf");
+        self.load_gltf("example/example3.gltf");
+        //self.load_gltf("example/example4.gltf");
     }
 }
 
