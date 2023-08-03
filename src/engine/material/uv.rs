@@ -12,10 +12,10 @@ pub struct UVMaterial {
 impl Material for UVMaterial {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         let diffuse_position = hit_result.normal + random_in_unit_sphere();
-        diffuse_position.normalize()
+        diffuse_position
     }
 
-    fn sample(&self, hit_result : &HitResult) -> Vec3A {
+    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         Vec3A::new(hit_result.uvs[0].x, hit_result.uvs[0].y, 1.0 - hit_result.uvs[0].x - hit_result.uvs[0].y)
     }
 }

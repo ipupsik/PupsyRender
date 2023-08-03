@@ -51,17 +51,18 @@ impl Renderer {
 
             let hit_result = hit_result_option.unwrap();
 
-            sample *= hit_result.material.sample(&hit_result);
+            sample *= hit_result.material.sample(&ray, &hit_result);
             let scatter = hit_result.material.scatter(&ray, &hit_result);
 
-            ray = Ray{origin : hit_result.position, direction : scatter};
+            ray = Ray{origin : hit_result.position, direction : scatter.normalize()};
         }
 
+        //sample
         Vec3A::ZERO
     }
 
     pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>) {
-        let height: u32 = 1024;
+        let height: u32 = 512;
         let width: u32 = (height as f32 * camera.aspect_ratio) as u32;
     
         struct WorkerInfo {

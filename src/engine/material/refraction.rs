@@ -43,10 +43,10 @@ impl Material for RefractionMaterial {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
         let direction = refract(ray, hit_result, ior);
-        direction.normalize()
+        direction
     }
 
-    fn sample(&self, hit_result : &HitResult) -> Vec3A {
+    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         Vec3A::ONE
     }
 }

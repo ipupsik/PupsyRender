@@ -11,10 +11,10 @@ pub struct DiffuseMaterial {
 impl Material for DiffuseMaterial {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         let diffuse_position = hit_result.normal + random_in_unit_sphere();
-        diffuse_position.normalize()
+        diffuse_position
     }
 
-    fn sample(&self, hit_result : &HitResult) -> Vec3A {
+    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         Vec3A::ONE
     }
 }

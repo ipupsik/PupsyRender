@@ -67,7 +67,7 @@ impl Traceable for Triangle {
         
         let normal = self.vertices[0].normal * (1.0 - v - u) + self.vertices[1].normal * u + self.vertices[2].normal * v;
 
-        return Some(HitResult { position: ray.at(t), t: t, normal: normal, 
+        return Some(HitResult { position: ray.at(t), t: t, normal: normal.normalize(), 
             uvs: uvs, front_face: front_face, material: self.material.clone() });
     }
 

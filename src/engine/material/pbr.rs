@@ -45,12 +45,11 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 
 impl Material for PBRMaterial {
     fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Vec3A {
-        let diffuse_position = hit_result.normal + random_in_unit_sphere();
-        diffuse_position.normalize()
+        self.pbr_metallic_roughness.scatter(ray, hit_result)
     }
 
-    fn sample(&self, hit_result : &HitResult) -> Vec3A {
-        let mut final_color = self.pbr_metallic_roughness.sample(hit_result);
+    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
+        let mut final_color = self.pbr_metallic_roughness.sample(ray, hit_result);
         final_color += Vec3A::from(self.emissive_texture.sample(
             &self.emissive_texture_sampler, 
             self.emissive_texture.texture.get_uv_by_index(&hit_result.uvs)
