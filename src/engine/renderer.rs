@@ -33,23 +33,23 @@ impl Renderer {
     }
 
     fn sample_scene(ray : &Ray, bvh : &Node, depth : u64) -> Vec3A {
-        let hit_result_option = bvh.hit(ray, 0.001, f32::MAX);
+        let mut ray = ray.clone();
+        let mut sample = Vec3A::ONE;
+        for i in 0..depth {
+            let hit_result_option = bvh.hit(&ray, 0.001, f32::MAX);
 
-        if !hit_result_option.is_some() {
-            let t = 0.5 * (ray.direction.y + 1.0);
-            return (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
-        }
-
-        let hit_result = hit_result_option.unwrap();
-
-        if depth > 1 {
-            let sample = hit_result.material.sample(&hit_result);
-            let scatter = hit_result.material.scatter(ray, &hit_result);
-
-            let new_ray = Ray{origin : hit_result.position, direction : scatter};
-            if depth > 1 {
-                return 0.8 * Self::sample_scene(&new_ray, bvh, depth - 1) * sample;
+            if !hit_result_option.is_some() {
+                let t = 0.5 * (ray.direction.y + 1.0);
+                let sky = (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
+                return sample * sky;
             }
+
+            let hit_result = hit_result_option.unwrap();
+
+            sample *= hit_result.material.sample(&hit_result);
+            let scatter = hit_result.material.scatter(&ray, &hit_result);
+
+            ray = Ray{origin : hit_result.position, direction : scatter};
         }
 
         Vec3A::ZERO
