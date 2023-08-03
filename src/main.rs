@@ -1,24 +1,10 @@
-use pupsy_raytracing_engine::engine::{renderer::Renderer, render_context::RenderContext, camera::Camera, 
-    scene::Scene, render_target::RenderTarget};
-use pupsy_raytracing_engine::engine::math::ray::*;
-use image::{ImageBuffer};
+use pupsy_raytracing_engine::engine::{renderer::Renderer, render_context::RenderContext, 
+    scene::Scene};
 use std::env;
 use std::sync::{Arc};
-use glam::{Vec3A};
-use image::{Rgb};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-
-    const ASPECT_RATIO: f32 = 16.0 / 9.0;
-    const IMAGE_HEIGHT: u32 = 1024;
-    const IMAGE_WIDTH: u32 = (IMAGE_HEIGHT as f32 * ASPECT_RATIO) as u32;
-
-    let mut rgb_frame_buffer = ImageBuffer::new(IMAGE_WIDTH as u32, IMAGE_HEIGHT as u32);
-    let render_target = RenderTarget{
-        width: IMAGE_WIDTH as u32,
-        height: IMAGE_HEIGHT as u32,
-    };
 
     let mut scene = Scene::new();
 
@@ -33,27 +19,11 @@ fn main() {
     // Build bvh
     scene.build_bvh();
 
-    let render_context = Arc::new(RenderContext{render_target : render_target, scene : scene, spp : 100,
-        max_depth : 50});
+    let render_context = Arc::new(RenderContext{scene : scene, spp : 100,
+        max_depth : 5});
     let renderer = Renderer{};
 
     for (index, camera) in render_context.scene.cameras.iter().enumerate() {
-        let mut frame_buffer = Vec::new();
-        renderer.render(camera.clone(), render_context.clone(), &mut frame_buffer);
-    
-        for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
-            let mut linear_index = (y * render_context.render_target.width + x) as usize;
-            for chunk in frame_buffer.iter() {
-                if linear_index < chunk.len() {
-                    let scene_color = chunk[linear_index];
-    
-                    *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
-                    break;
-                }
-                linear_index -= chunk.len();
-            }
-        }
-    
-        rgb_frame_buffer.save(format!("image{}.png", index)).unwrap();
+        renderer.render(camera.clone(), render_context.clone());
     }
 }

@@ -345,13 +345,19 @@ impl Scene {
                         z_far = perspective.zfar().unwrap();
                     }
 
+                    let mut name = "Default";
+                    if camera.name().is_some() {
+                        name = camera.name().unwrap();
+                    }
+
                     self.cameras.push(Arc::new(
                         PerspectiveCamera::new(
                             &new_matrix,
                             perspective.yfov(),
                             aspect_ratio,
                             perspective.znear(),
-                            z_far
+                            z_far,
+                            name
                         )
                     ))
                 },
@@ -467,8 +473,8 @@ impl Scene {
         // gltf
         //self.load_gltf("example1.gltf");
         //self.load_gltf("example2.gltf");
-        //self.load_gltf("example3.gltf");
-        self.load_gltf("example4.gltf");
+        self.load_gltf("example3.gltf");
+        //self.load_gltf("example4.gltf");
     }
 }
 

@@ -5,7 +5,7 @@ use crate::engine::math::ray::*;
 use crate::engine::math::utils::*;
 use super::pbr_metallic_roughness::*;
 use crate::engine::texture::texture2d::*;
-use crate::engine::sampler::*;
+use crate::engine::sampler::sampler::*;
 use crate::engine::texture::*;
 
 use glam::{Vec3A};

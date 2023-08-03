@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::engine::math::ray::*;
 use glam::{Vec3A, Vec4, Mat4};
 
@@ -11,7 +13,8 @@ pub struct PerspectiveCamera {
     pub focal_length: f32,
     pub up: Vec3A,
     pub right: Vec3A,
-    pub ray: Ray
+    pub ray: Ray,
+    pub name: String,
 }
 
 pub struct OrthographicCamera {
@@ -29,6 +32,7 @@ impl PerspectiveCamera {
         aspect_ratio: f32,
         z_near: f32,
         z_far: f32,
+        name: &str,
     ) -> Self {
 
         let h = (vertical_fov / 2.0).tan();
@@ -49,6 +53,7 @@ impl PerspectiveCamera {
             up: up,
             right: right,
             ray: Ray{origin: origin, direction: forward},
+            name: String::from_str(name).unwrap()
         }
     }
 }

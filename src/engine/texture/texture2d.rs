@@ -1,4 +1,4 @@
-use crate::engine::sampler::*;
+use crate::engine::sampler::sampler::*;
 use crate::engine::texture::*;
 use std::collections::HashMap;
 use std::sync::*;

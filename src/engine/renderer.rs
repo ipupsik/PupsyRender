@@ -7,6 +7,11 @@ use crate::engine::geometry::traceable::HitResult;
 use crate::engine::geometry::bvh::node::*;
 use rand::Rng;
 
+use image::{ImageBuffer};
+use std::env;
+use std::sync::{Arc};
+use image::{Rgb};
+
 use super::geometry::traceable::Traceable;
 use super::material::Material;
 use super::material::diffuse::*;
@@ -32,7 +37,7 @@ impl Renderer {
        input / (Vec3A::ONE + input)
     }
 
-    fn sample_scene(ray : &Ray, bvh : &Node, depth : u64) -> Vec3A {
+    fn sample_scene(ray : &Ray, bvh : &Node, depth : u32) -> Vec3A {
         let mut ray = ray.clone();
         let mut sample = Vec3A::ONE;
         for i in 0..depth {
@@ -55,9 +60,19 @@ impl Renderer {
         Vec3A::ZERO
     }
 
-    pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>, output_frame_buffer: &mut Vec<Vec<Vec3A>>) {
+    pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>) {
+        let height: u32 = 1024;
+        let width: u32 = (height as f32 * camera.aspect_ratio) as u32;
+    
+        struct WorkerInfo {
+            pub back_buffer_chunk: Vec<Vec3A>,
+            pub sample_index: u32,
+        }
+        let mut output_frame_buffer: Vec<WorkerInfo> = Vec::new();
+        let mut rgb_frame_buffer = ImageBuffer::new(width, height);
+        
         // Parallel our work
-        let frame_buffer_len = (render_context.render_target.width * render_context.render_target.height) as usize;
+        let frame_buffer_len = (width * height) as usize;
 
         //let num_cores = 1;
         let num_cores = num_cpus::get();
@@ -76,8 +91,8 @@ impl Renderer {
                 index_end = frame_buffer_len;
             }
 
-            output_frame_buffer.push(Vec::new());
-            output_frame_buffer[thr].reserve((index_end - index_begin) as usize);
+            output_frame_buffer.push(WorkerInfo{back_buffer_chunk: Vec::new(), sample_index: 0});
+            output_frame_buffer[thr].back_buffer_chunk.resize((index_end - index_begin) as usize, Vec3A::ZERO);
 
             let camera = Arc::new(camera.clone());
             let render_context = Arc::new(render_context.clone());
@@ -86,44 +101,60 @@ impl Renderer {
             threads.push(
                 thread::spawn(move || {
                     let mut frame_buffer_slice = vec![Vec3A::ZERO; index_end - index_begin];
-                    for i in 0..index_end - index_begin
-                    {
-                        frame_buffer_slice[i] = Vec3A::ONE * 255.99;
-                        let x = (index_begin + i) as u32 % render_context.render_target.width;
-                        let y = (index_begin + i) as u32 / render_context.render_target.width;
+                    for sample_index in 0..render_context.spp {
+                        for i in 0..index_end - index_begin
+                        {
+                            let x = (index_begin + i) as u32 % width;
+                            let y = (index_begin + i) as u32 / width;
 
-                        let mut scene_color = Vec3A::new(0.0, 0.0, 0.0);
-                        for _ in 0..render_context.spp {
-                            let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.width - 1) as f32;
-                            let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (render_context.render_target.height - 1) as f32;
+                            let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (width - 1) as f32;
+                            let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (height - 1) as f32;
             
                             let ray = camera.get_ray(u, 1.0 - v);
             
-                            let mut current_sample = Self::sample_scene(&ray, 
+                            let current_sample = Self::sample_scene(&ray, 
                                 &render_context.scene.bvh, render_context.max_depth);
-         
-                            scene_color = scene_color + current_sample / render_context.spp as f32;
+        
+                            frame_buffer_slice[i] += current_sample / render_context.spp as f32;
                         }
-
-                        //scene_color = Self::tone_mapping(scene_color);
-                        scene_color = Self::gamma_correction(scene_color);  
-                        scene_color = scene_color * 255.999;
-
-                        frame_buffer_slice[i] = scene_color;
+                        tx.send((frame_buffer_slice.clone(), thr, sample_index)).unwrap();
                     }
-                    tx.send((frame_buffer_slice, thr)).unwrap();
                 })
             );
+        }
+
+        for sample_index in 0..render_context.spp {
+            for v in rx.iter().take(num_cores){
+                let (frame_buffer_slice, thread_index, sample_index) = v;
+                output_frame_buffer[thread_index].back_buffer_chunk = frame_buffer_slice;
+                output_frame_buffer[thread_index].sample_index = sample_index;
+            }
+
+            for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
+                *pixel = Rgb([0, 0, 0]);
+                let mut linear_index = (y * width + x) as usize;
+                for chunk in output_frame_buffer.iter() {
+                    if linear_index < chunk.back_buffer_chunk.len() {
+                        let mut scene_color = chunk.back_buffer_chunk[linear_index];
+        
+                        //scene_color = Self::tone_mapping(scene_color);
+                        scene_color *= render_context.spp as f32 / (chunk.sample_index as f32 + 1.0);
+                        scene_color = Self::gamma_correction(scene_color);  
+                        scene_color *= 255.0;
+    
+                        *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
+                        break;
+                    }
+                    linear_index -= chunk.back_buffer_chunk.len();
+                }
+            }
+        
+            rgb_frame_buffer.save(format!("{}.png", camera.name)).unwrap();
         }
 
         for thr in threads
         {
             thr.join().unwrap();
-        }
-
-        for v in rx.iter().take(num_cores){
-            let (frame_buffer_slice, thread_index) = v;
-            output_frame_buffer[thread_index].extend(frame_buffer_slice);
         }
     }
 }
