@@ -46,6 +46,8 @@ impl Texture {
                 return Vec2::new(uv.x, uv.y);
             }
         }
+
+        println!("Invalid uv set");
         return Vec2::ZERO;
     }
 }

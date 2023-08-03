@@ -16,24 +16,24 @@ pub struct Node {
 
 impl Node {
     pub fn new(objects: &Vec<Arc<dyn Traceable>>, min_index: usize, max_index: usize) -> Self {
-        let mut objects = objects.clone(); // Create a modifiable array of the source scene objects
+        let mut objects = objects[min_index..max_index].to_vec(); // Create a modifiable array of the source scene objects
         let axis = rand::thread_rng().gen_range(0..2);
 
-        let count = max_index - min_index;
+        let count = objects.len();
 
         let mut left: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO));
         let mut right: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO));
 
         if count == 1 {
-            left = objects[min_index].clone();
+            left = objects[0].clone();
             right = left.clone();
         } else if count > 0 {
-            let mid = min_index + count / 2;
+            let mid = count / 2;
 
             objects.sort_by(|a, b| AABB::cmp(a, b, axis));
 
-            left =  Arc::new(Self::new(&objects, min_index, mid));
-            right = Arc::new(Self::new(&objects, mid, max_index));
+            left =  Arc::new(Self::new(&objects, 0, mid));
+            right = Arc::new(Self::new(&objects, mid, count));
         }
 
         let aabb = left.bounding_box().extend(&right.bounding_box());

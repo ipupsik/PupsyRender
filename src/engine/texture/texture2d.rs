@@ -25,6 +25,10 @@ impl Texture2D {
     pub fn sample(&self, sampler : &Sampler, uv: Vec2) -> Vec4 {
         let uv = uv.fract();
 
+        if self.texture.dimensions.len() != 2 {
+            return Vec4::ZERO;
+        }
+
         let x = uv.x * (self.texture.dimensions[0] - 1) as f32;
         let y = uv.y * (self.texture.dimensions[1] - 1) as f32;
 
