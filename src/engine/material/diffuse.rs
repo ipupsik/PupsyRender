@@ -12,10 +12,14 @@ pub struct DiffuseMaterial {
 }
 
 impl Material for DiffuseMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
         let onb = ONB::build_from_z(hit_result.normal);
 
-        (Vec3A::ONE, Some(Rc::new(CosinePDF::new(hit_result.normal))))
+        ScatterResult{
+            attenuation: Vec3A::ONE, 
+            scatter: Some(Rc::new(CosinePDF::new(hit_result.normal))),
+            alpha_masked: false
+        }
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {

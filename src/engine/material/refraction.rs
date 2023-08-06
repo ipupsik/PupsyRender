@@ -40,11 +40,16 @@ fn refract(ray: &Ray, hit_result: &HitResult, ior: f32) -> Vec3A {
 }
 
 impl Material for RefractionMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
         let direction = refract(ray, hit_result, ior).normalize();
-        (Vec3A::ONE, Some(Rc::new(CosinePDF::new(direction))))
+        
+        ScatterResult{
+            attenuation: Vec3A::ONE, 
+            scatter: Some(Rc::new(CosinePDF::new(direction))),
+            alpha_masked: false
+        }
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {

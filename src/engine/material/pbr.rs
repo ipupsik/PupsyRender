@@ -43,10 +43,8 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
-        let (sample, scatter_direction) = self.pbr_metallic_roughness.scatter(ray, hit_result);
-
-        (sample, scatter_direction)
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
+        self.pbr_metallic_roughness.scatter(ray, hit_result)
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {

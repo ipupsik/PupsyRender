@@ -43,6 +43,17 @@ fn main() {
                 exit(-1);
             }
         }
+
+        if arg == "--res" {
+            if args.len() > i + 1 {
+                let resolution: u32 = args[i + 1].parse::<u32>().expect("Invalid depth value");
+                render_context.resolution = resolution;
+            }
+            else {
+                println!("Empty depth value");
+                exit(-1);
+            }
+        }
     }
 
     // Build bvh

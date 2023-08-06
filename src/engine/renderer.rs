@@ -52,11 +52,13 @@ impl Renderer {
 
             let hit_result = hit_result_option.unwrap();
 
-            let (mut sample, scattering_pdf_option) = hit_result.material.scatter(&ray, &hit_result);
+            let scatter_result = hit_result.material.scatter(&ray, &hit_result);
             let emmission = hit_result.material.emit(&ray, &hit_result);
 
-            if scattering_pdf_option.is_some() {
-                let pdf = scattering_pdf_option.unwrap();
+            let mut sample = scatter_result.attenuation;
+
+            if scatter_result.scatter.is_some() {
+                let pdf = scatter_result.scatter.unwrap();
 
                 let mut scatter = Vec3A::ZERO;
                 let mut pdf_value = 0.0;
@@ -88,8 +90,14 @@ impl Renderer {
                     pdf_value = pdf.value(scatter);
                 }
 
-                let scattering_ray = Ray{origin : hit_result.position, direction : scatter};
-                let scattering_pdf_value = hit_result.material.scattering_pdf(&ray, &hit_result, &scattering_ray);
+                let mut scattering_ray = Ray{origin : hit_result.position, direction : scatter};
+                let mut scattering_pdf_value = hit_result.material.scattering_pdf(&ray, &hit_result, &scattering_ray);
+
+                if scatter_result.alpha_masked {
+                    scattering_ray = Ray{origin : hit_result.position, direction : ray.direction};
+                    scattering_pdf_value = 1.0;
+                    pdf_value = 1.0;
+                }
 
                 sample = sample * scattering_pdf_value / pdf_value;
 
@@ -97,6 +105,7 @@ impl Renderer {
             } else {
                 return average_sample * emmission;
             }
+
             average_sample = emmission + average_sample * sample;
         }
 
@@ -106,7 +115,7 @@ impl Renderer {
     }
 
     pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>) {
-        let height: u32 = 512;
+        let height: u32 = render_context.resolution;
         let width: u32 = (height as f32 * camera.aspect_ratio()) as u32;
     
         struct WorkerInfo {

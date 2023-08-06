@@ -17,10 +17,14 @@ use std::{sync::{Arc}, rc::Rc};
 
 use self::pdf::PDF;
 
+pub struct ScatterResult {
+    pub attenuation: Vec3A,
+    pub scatter: Option<Rc<dyn PDF>> /* Scatter */,
+    pub alpha_masked: bool,  
+}
+
 pub trait Material {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (
-        Vec3A /* Attenuation */, 
-        Option<Rc<dyn PDF>> /* Scatter */);
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult;
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32;
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A;
 }
