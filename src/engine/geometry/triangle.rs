@@ -2,6 +2,7 @@ use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use crate::engine::geometry::vertex::*;
 use glam::{Vec3A};
+use rand::{Rng};
 use super::bvh::aabb::*;
 use crate::engine::material::*;
 use std::sync::*;
@@ -84,6 +85,13 @@ impl Traceable for Triangle {
         let cosine = ray.direction.dot(hit_result.normal).abs();
 
         return distance_squared / (cosine * area);
+    }
+
+    fn random(&self) -> Vec3A {
+        let u: f32 = rand::thread_rng().gen_range(0.0..1.0);
+        let v: f32 = rand::thread_rng().gen_range(0.0..1.0);
+
+        self.vertices[0].position * (1.0 - v - u) + self.vertices[1].position * u + self.vertices[2].position * v
     }
 
     fn bounding_box(&self) -> AABB {

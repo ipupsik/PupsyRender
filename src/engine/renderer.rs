@@ -2,16 +2,20 @@ use crate::engine::camera::*;
 use crate::engine::render_context::*;
 use crate::engine::math::ray::*;
 use glam::{Vec3A};
+use gltf::mesh::util::weights;
 use crate::engine::geometry::bvh::node::*;
 use crate::engine::material::pdf::cosine::*;
 use rand::Rng;
 
 use image::{ImageBuffer};
+use std::rc::Rc;
 use std::sync::{Arc};
 use image::{Rgb};
 
 use super::geometry::traceable::Traceable;
 use super::material::pdf::PDF;
+use super::material::pdf::mix::MixPDF;
+use super::material::pdf::traceable::GeometryPDF;
 
 use std::thread::{self};
 use std::sync::*;
@@ -34,7 +38,7 @@ impl Renderer {
        input / (Vec3A::ONE + input)
     }
 
-    fn sample_scene(ray : &Ray, bvh : &Node, depth : u32) -> Vec3A {
+    fn sample_scene(ray : &Ray, bvh : &Node, lights: &Vec<Arc<dyn Traceable>>, depth : u32) -> Vec3A {
         let mut ray = ray.clone();
         let mut average_sample = Vec3A::ONE;
         for i in 0..depth {
@@ -54,9 +58,36 @@ impl Renderer {
             if scatter_option.is_some() {
                 let mut scatter = scatter_option.unwrap();
 
-                let cosine_pdf: CosinePDF = PDF::new(hit_result.normal);
-                scatter = cosine_pdf.generate();
-                let pdf = cosine_pdf.value(scatter);
+                let mut cosine_pdf = Rc::new(CosinePDF::new(hit_result.normal));
+
+                let mut pdf = 0.0;
+
+                if lights.len() > 0 {
+                    let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
+                    let mut weights = Vec::new();
+
+                    let uniform_weight = 1.0 / lights.len() as f32;
+
+                    for light in lights {
+                        pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
+                        weights.push(uniform_weight);
+                    }
+
+                    let light_pdf = Rc::new(MixPDF{ 
+                        pdfs: pdfs,
+                        weights: weights});
+
+                    let final_pdf = MixPDF{ 
+                        pdfs: vec![cosine_pdf.clone(), light_pdf.clone()],
+                        weights: vec![0.5, 0.5]};
+
+                    scatter = final_pdf.generate();
+                    pdf = final_pdf.value(scatter);
+                }
+                else {
+                    scatter = cosine_pdf.generate();
+                    pdf = cosine_pdf.value(scatter);
+                }
 
                 ray = Ray{origin : hit_result.position, direction : scatter};
 
@@ -125,7 +156,7 @@ impl Renderer {
                             let ray = camera.get_ray(u, 1.0 - v);
             
                             let current_sample = Self::sample_scene(&ray, 
-                                &render_context.scene.bvh, render_context.max_depth);
+                                &render_context.scene.bvh, &render_context.scene.lights, render_context.max_depth);
         
                             frame_buffer_slice[i] += current_sample / render_context.spp as f32;
                         }

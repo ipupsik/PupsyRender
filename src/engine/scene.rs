@@ -16,6 +16,7 @@ use crate::engine::geometry::sphere::*;
 use crate::engine::math::utils::*;
 use crate::engine::camera::*;
 
+use super::geometry::sphere;
 use super::geometry::traceable::Traceable;
 use super::geometry::triangle::*;
 use super::geometry::vertex::Vertex;
@@ -32,6 +33,7 @@ use std::fs;
 
 pub struct Scene {
     pub geometry: Vec<Arc<dyn Traceable>>,
+    pub lights: Vec<Arc<dyn Traceable>>,
     pub materials: Vec<Arc<dyn Material>>,
     pub textures: Vec<Arc<Texture>>,
     pub bvh: Node,
@@ -57,6 +59,7 @@ impl Scene {
         Self { 
             bvh: Node::new(&Vec::new(), 0, 0),
             geometry : Vec::new(),
+            lights: Vec::new(),
             materials : Vec::new(),
             textures : Vec::new(),
             cameras: Vec::new(),
@@ -454,11 +457,32 @@ impl Scene {
         let uv_material = Arc::new(
             UVMaterial{diffuse: DiffuseMaterial{}}
         );
-        let diffuse_light_material = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(2.0, 2.0, 2.0)}
+        let diffuse_light_material1 = Arc::new(
+            DiffuseLightMaterial{color: Vec3A::new(1.7, 0.1, 0.2)}
+        );
+        let diffuse_light_material2 = Arc::new(
+            DiffuseLightMaterial{color: Vec3A::new(0.05, 1.6, 0.0)}
+        );
+        let diffuse_light_material3 = Arc::new(
+            DiffuseLightMaterial{color: Vec3A::new(1.5, 1.5, 1.5)}
+        );
+        let diffuse_light_material4 = Arc::new(
+            DiffuseLightMaterial{color: Vec3A::new(0.1, 0.05, 2.5)}
         );
 
-        self.geometry.push(Arc::new(Sphere{material: diffuse_light_material.clone(), radius : 0.7, position : Vec3A::new(-6.5, 1.0, 0.0)}));
+        let sphere1 = Arc::new(Sphere{material: diffuse_light_material1.clone(), radius : 0.2, position : Vec3A::new(-6.5, 1.0, -1.0)});
+        let sphere2 = Arc::new(Sphere{material: diffuse_light_material2.clone(), radius : 0.2, position : Vec3A::new(-2.5, 2.0, 0.0)});
+        let sphere3 = Arc::new(Sphere{material: diffuse_light_material3.clone(), radius : 0.2, position : Vec3A::new(-6.5, 1.0, 0.5)});
+        let sphere4 = Arc::new(Sphere{material: diffuse_light_material4.clone(), radius : 0.2, position : Vec3A::new(2.5, 1.5, -0.5)});
+
+        self.lights.push(sphere1.clone());
+        self.geometry.push(sphere1.clone());
+        self.lights.push(sphere2.clone());
+        self.geometry.push(sphere2.clone());
+        self.lights.push(sphere3.clone());
+        self.geometry.push(sphere3.clone());
+        self.lights.push(sphere4.clone());
+        self.geometry.push(sphere4.clone());
         //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
@@ -469,7 +493,10 @@ impl Scene {
         self.materials.push(normal_material.clone());
         self.materials.push(refraction_material.clone());
         self.materials.push(uv_material.clone());
-        self.materials.push(diffuse_light_material.clone());
+        self.materials.push(diffuse_light_material1.clone());
+        self.materials.push(diffuse_light_material2.clone());
+        self.materials.push(diffuse_light_material3.clone());
+        self.materials.push(diffuse_light_material4.clone());
     }
 }
 

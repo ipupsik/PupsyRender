@@ -61,6 +61,10 @@ impl Traceable for AABB {
         0.0
     }
 
+    fn random(&self) -> Vec3A {
+        Vec3A::ZERO
+    }
+
     fn bounding_box(&self) -> AABB {
         *self
     }

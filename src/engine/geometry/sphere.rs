@@ -3,6 +3,7 @@ use crate::engine::geometry::traceable::*;
 use glam::{Vec3A};
 use super::bvh::aabb::*;
 use crate::engine::material::*;
+use crate::engine::math::utils::*;
 
 use std::{sync::*};
 
@@ -60,6 +61,10 @@ impl Traceable for Sphere {
         let cosine = ray.direction.dot(hit_result.normal).abs();
 
         return distance_squared / (cosine * area);
+    }
+
+    fn random(&self) -> Vec3A {
+        self.position + random_in_unit_sphere() * self.radius
     }
 
     fn bounding_box(&self) -> AABB {

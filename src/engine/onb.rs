@@ -3,6 +3,7 @@ use std::str::FromStr;
 use crate::engine::math::ray::*;
 use glam::{Vec3A, Vec4, Mat4};
 
+#[derive(Copy, Clone)]
 pub struct ONB {
     pub x: Vec3A,
     pub y: Vec3A,

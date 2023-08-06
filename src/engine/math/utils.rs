@@ -8,22 +8,15 @@ fn random(min : f32, max : f32) -> Vec3A {
 }
 
 pub fn random_in_unit_sphere() -> Vec3A {
-    loop {
-        let point = random(-1.0, 1.0);
-        if point.length_squared() <= 1.0 {
-            return point;
-        }
-    }
-}
+    let r1: f32 = rand::thread_rng().gen_range(0.0..1.0);
+    let r2: f32 = rand::thread_rng().gen_range(0.0..1.0);
 
-pub fn random_in_hemisphere(normal: Vec3A) -> Vec3A {
-    let point = random_in_unit_sphere();
-    if normal.dot(point) > 0.0 {
-        return point;
-    }
-    else {
-        return -point;
-    }
+    let phi = 2.0 * std::f32::consts::PI * r1;
+    let x = phi.cos() * (r2 * (1.0 - r2)).sqrt();
+    let y = phi.sin() * (r2 * (1.0 - r2)).sqrt();
+    let z = 1.0 - 2.0 * r2;
+
+    Vec3A::new(x, y, z)
 }
 
 pub fn random_cosine_direction() -> Vec3A {
