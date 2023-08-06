@@ -5,6 +5,8 @@ use crate::engine::math::ray::*;
 use crate::engine::math::utils::*;
 use glam::{Vec3A};
 
+use super::pdf::cosine::CosinePDF;
+
 pub struct MetalMaterial {
     pub metalness: f32,
 }
@@ -14,9 +16,13 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for MetalMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
         let direction = reflect(ray.direction, hit_result.normal) + (1.0 - self.metalness) * random_in_unit_sphere();
-        (Vec3A::ONE, Some(direction.normalize()), 1.0)
+        (Vec3A::ONE, Some(Rc::new(CosinePDF::new(direction.normalize()))))
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
+        1.0
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

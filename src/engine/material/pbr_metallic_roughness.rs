@@ -101,7 +101,7 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMetallicRoughnessMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
         let mut albedo = Vec4::ONE;
         albedo *= self.base_color_factor;
         albedo = albedo * self.base_color_texture.sample(
@@ -109,7 +109,7 @@ impl Material for PBRMetallicRoughnessMaterial {
             self.base_color_texture.texture.get_uv_by_index(&hit_result.uvs)
         );        
 
-        let (_, mut scattering_direction, scattered_pdf) = self.diffuse.scatter(&ray, &hit_result);
+        let (_, mut scattering_pdf) = self.diffuse.scatter(&ray, &hit_result);
 
         let light_vector = Vec3A::new(0.0, 0.0, 1.0);
 
@@ -119,10 +119,13 @@ impl Material for PBRMetallicRoughnessMaterial {
 
         if albedo.w < 0.99 {
             sample = Vec4::ONE;
-            scattering_direction = Some(ray.direction);
         }
 
-        return (Vec3A::from(sample), scattering_direction, scattered_pdf);
+        return (Vec3A::from(sample), scattering_pdf);
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
+        self.diffuse.scattering_pdf(&ray, &hit_result, &scattering)
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

@@ -13,12 +13,14 @@ use crate::engine::math::ray::*;
 use glam::{Vec3A};
 use crate::engine::geometry::traceable::*;
 
-use std::sync::{Arc};
+use std::{sync::{Arc}, rc::Rc};
+
+use self::pdf::PDF;
 
 pub trait Material {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (
         Vec3A /* Attenuation */, 
-        Option<Vec3A> /* Scatter */,
-        f32 /* Scattered PDF */);
+        Option<Rc<dyn PDF>> /* Scatter */);
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32;
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A;
 }

@@ -4,6 +4,8 @@ use crate::engine::geometry::traceable::*;
 use crate::engine::math::ray::*;
 use glam::{Vec3A};
 
+use super::pdf::cosine::CosinePDF;
+
 #[derive(Copy, Clone)]
 pub enum RefractionType {
     Air,
@@ -38,11 +40,15 @@ fn refract(ray: &Ray, hit_result: &HitResult, ior: f32) -> Vec3A {
 }
 
 impl Material for RefractionMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
-        let direction = refract(ray, hit_result, ior);
-        (Vec3A::ONE, Some(direction.normalize()), 1.0)
+        let direction = refract(ray, hit_result, ior).normalize();
+        (Vec3A::ONE, Some(Rc::new(CosinePDF::new(direction))))
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
+        1.0
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

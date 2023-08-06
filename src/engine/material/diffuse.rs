@@ -5,21 +5,23 @@ use crate::engine::geometry::traceable::*;
 use crate::engine::math::utils::*;
 use crate::engine::onb::*;
 
+use super::pdf::cosine::CosinePDF;
+
 pub struct DiffuseMaterial {
     
 }
 
 impl Material for DiffuseMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Rc<dyn PDF>>) {
         let onb = ONB::build_from_z(hit_result.normal);
-        let scattering_direction = onb.get_position(random_cosine_direction()).normalize();
 
-        // Scattered PDF
-        let cosine = hit_result.normal.dot(scattering_direction);
+        (Vec3A::ONE, Some(Rc::new(CosinePDF::new(hit_result.normal))))
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
+        let cosine = hit_result.normal.dot(scattering.direction);
         let scattered_pdf =  if cosine < 0.0 {0.0} else {cosine / std::f32::consts::PI};
-        //
-
-        (Vec3A::ONE, Some(scattering_direction), scattered_pdf)
+        scattered_pdf
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

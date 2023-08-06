@@ -52,15 +52,14 @@ impl Renderer {
 
             let hit_result = hit_result_option.unwrap();
 
-            let (mut sample, scatter_option, scattered_pdf) = hit_result.material.scatter(&ray, &hit_result);
+            let (mut sample, scattering_pdf_option) = hit_result.material.scatter(&ray, &hit_result);
             let emmission = hit_result.material.emit(&ray, &hit_result);
 
-            if scatter_option.is_some() {
-                let mut scatter = scatter_option.unwrap();
+            if scattering_pdf_option.is_some() {
+                let pdf = scattering_pdf_option.unwrap();
 
-                let mut cosine_pdf = Rc::new(CosinePDF::new(hit_result.normal));
-
-                let mut pdf = 0.0;
+                let mut scatter = Vec3A::ZERO;
+                let mut pdf_value = 0.0;
 
                 if lights.len() > 0 {
                     let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
@@ -78,20 +77,23 @@ impl Renderer {
                         weights: weights});
 
                     let final_pdf = MixPDF{ 
-                        pdfs: vec![cosine_pdf.clone(), light_pdf.clone()],
+                        pdfs: vec![pdf.clone(), light_pdf.clone()],
                         weights: vec![0.5, 0.5]};
 
                     scatter = final_pdf.generate();
-                    pdf = final_pdf.value(scatter);
+                    pdf_value = final_pdf.value(scatter);
                 }
                 else {
-                    scatter = cosine_pdf.generate();
-                    pdf = cosine_pdf.value(scatter);
+                    scatter = pdf.generate();
+                    pdf_value = pdf.value(scatter);
                 }
 
-                ray = Ray{origin : hit_result.position, direction : scatter};
+                let scattering_ray = Ray{origin : hit_result.position, direction : scatter};
+                let scattering_pdf_value = hit_result.material.scattering_pdf(&ray, &hit_result, &scattering_ray);
 
-                sample = sample * scattered_pdf / pdf;
+                sample = sample * scattering_pdf_value / pdf_value;
+
+                ray = scattering_ray;
             } else {
                 return average_sample * emmission;
             }
