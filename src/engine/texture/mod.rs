@@ -1,6 +1,5 @@
 pub mod texture2d;
 
-use std::sync::*;
 use glam::{Vec2, Vec3A};
 
 use image::DynamicImage;

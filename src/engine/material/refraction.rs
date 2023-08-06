@@ -2,7 +2,6 @@ use crate::engine::material::*;
 
 use crate::engine::geometry::traceable::*;
 use crate::engine::math::ray::*;
-use crate::engine::math::utils::*;
 use glam::{Vec3A};
 
 #[derive(Copy, Clone)]
@@ -39,14 +38,19 @@ fn refract(ray: &Ray, hit_result: &HitResult, ior: f32) -> Vec3A {
 }
 
 impl Material for RefractionMaterial {
-    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Vec3A {
+    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
         let direction = refract(ray, hit_result, ior);
-        direction
+        (Vec3A::ONE, Some(direction), 1.0)
     }
 
-    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
-        Vec3A::ONE
+    fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
+        Vec3A::ZERO
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattered_direction: Vec3A) -> f32 {
+        let cosine = hit_result.normal.dot(scattered_direction);
+        return if cosine < 0.0 {0.0} else {cosine / std::f32::consts::PI};
     }
 }

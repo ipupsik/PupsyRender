@@ -2,7 +2,6 @@ use crate::engine::material::*;
 
 use crate::engine::geometry::traceable::*;
 use crate::engine::math::ray::*;
-use crate::engine::math::utils::*;
 use super::pbr_metallic_roughness::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::sampler::sampler::*;
@@ -44,16 +43,20 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMaterial {
-    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Vec3A {
-        self.pbr_metallic_roughness.scatter(ray, hit_result)
+    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
+        let (sample, scatter_direction, pdf) = self.pbr_metallic_roughness.scatter(ray, hit_result);
+
+        (sample, scatter_direction, pdf)
     }
 
-    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
-        let mut final_color = self.pbr_metallic_roughness.sample(ray, hit_result);
-        final_color += Vec3A::from(self.emissive_texture.sample(
+    fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
+        Vec3A::from(self.emissive_texture.sample(
             &self.emissive_texture_sampler, 
             self.emissive_texture.texture.get_uv_by_index(&hit_result.uvs)
-        ));
-        return final_color;
+        ))
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattered_direction: Vec3A) -> f32 {
+        return self.pbr_metallic_roughness.scattering_pdf(&ray, &hit_result, scattered_direction);
     }
 }

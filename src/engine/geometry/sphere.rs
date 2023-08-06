@@ -1,10 +1,10 @@
 use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
-use glam::{Vec2, Vec3A};
+use glam::{Vec3A};
 use super::bvh::aabb::*;
 use crate::engine::material::*;
 
-use std::{sync::*, collections::HashMap};
+use std::{sync::*};
 
 pub struct Sphere {
     pub material: Arc<dyn Material>,

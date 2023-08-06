@@ -35,7 +35,11 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": [
+                "--in", "example/example1.gltf",
+                "--spp", "100",
+                "--depth", "100"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {

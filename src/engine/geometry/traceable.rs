@@ -4,8 +4,7 @@ use crate::engine::{math::ray::*, material::diffuse::DiffuseMaterial};
 use crate::engine::material::*;
 use std::sync::*;
 use super::bvh::aabb::*;
-use glam::{Vec2, Vec3A};
-use std::collections::HashMap;
+use glam::{Vec3A};
 
 pub trait Traceable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult>;

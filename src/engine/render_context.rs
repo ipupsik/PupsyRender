@@ -1,5 +1,4 @@
 use crate::engine::scene::*;
-use rand::rngs::ThreadRng;
 
 pub struct RenderContext {
     pub scene: Scene,

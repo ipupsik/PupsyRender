@@ -1,23 +1,21 @@
 use std::vec;
-use glam::{Vec2, Vec3A, Vec4, Mat4};
-use gltf::json::camera::Type;
+use glam::{Vec3A, Vec4, Mat4};
 use image::GenericImageView;
 use crate::engine::material::*;
 use crate::engine::material::diffuse::*;
+use crate::engine::material::diffuse_light::*;
 use crate::engine::material::metal::*;
 use crate::engine::material::normal::*;
 use crate::engine::material::refraction::*;
 use crate::engine::material::pbr::*;
-use std::collections::HashMap;
-use crate::engine::material::pbr_metallic_roughness::*;
 use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::texture::*;
 use crate::engine::geometry::bvh::node::*;
+use crate::engine::geometry::sphere::*;
 use crate::engine::math::utils::*;
 use crate::engine::camera::*;
 
-use super::geometry::sphere::*;
 use super::geometry::traceable::Traceable;
 use super::geometry::triangle::*;
 use super::geometry::vertex::Vertex;
@@ -26,9 +24,8 @@ use std::io::Cursor;
 use image::io::Reader as ImageReader;
 use image::ColorType;
 
-use data_url::{DataUrl, mime};
+use data_url::{DataUrl};
 
-use std::rc::*;
 use std::sync::{Arc};
 use std::io;
 use std::fs;
@@ -370,7 +367,7 @@ impl Scene {
     }
 
     pub fn load_gltf(&mut self, path: &str) {
-        let file = fs::File::open(path).unwrap();
+        let file = fs::File::open(path).expect(format!("Invalid filename: {}", path).as_str());
         let reader = io::BufReader::new(file);
         let gltf = gltf::Gltf::from_reader(reader).unwrap();
 
@@ -450,15 +447,18 @@ impl Scene {
         let metal_material = Arc::new(
             MetalMaterial{metalness : 0.9}
         );
-        let normal_material = Arc::new(NormalMaterial{});
+        let normal_material = Arc::new(NormalMaterial{diffuse: DiffuseMaterial{}});
         let refraction_material = Arc::new(
             RefractionMaterial{refraction_type: RefractionType::Glass}
         );
         let uv_material = Arc::new(
-            UVMaterial{}
+            UVMaterial{diffuse: DiffuseMaterial{}}
+        );
+        let diffuse_light_material = Arc::new(
+            DiffuseLightMaterial{color: Vec3A::new(2.0, 2.0, 2.0)}
         );
 
-        //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 0.5, position : Vec3A::new(1.7, 0.0, 0.6)}));
+        //self.geometry.push(Arc::new(Sphere{material: diffuse_light_material.clone(), radius : 0.7, position : Vec3A::new(-3.0, 1.0, 0.0)}));
         //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
@@ -469,12 +469,7 @@ impl Scene {
         self.materials.push(normal_material.clone());
         self.materials.push(refraction_material.clone());
         self.materials.push(uv_material.clone());
-
-        // gltf
-        //self.load_gltf("example/example1.gltf");
-        //self.load_gltf("example/example2.gltf");
-        //self.load_gltf("example/example3.gltf");
-        self.load_gltf("example/example4.gltf");
+        self.materials.push(diffuse_light_material.clone());
     }
 }
 

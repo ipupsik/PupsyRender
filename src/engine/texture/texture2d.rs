@@ -1,7 +1,5 @@
 use crate::engine::sampler::sampler::*;
 use crate::engine::texture::*;
-use std::collections::HashMap;
-use std::sync::*;
 use glam::{Vec2, Vec3A, Vec4};
 use image::GenericImageView;
 

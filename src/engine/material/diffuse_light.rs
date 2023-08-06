@@ -3,24 +3,18 @@ use crate::engine::material::*;
 use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use crate::engine::math::utils::*;
-use crate::engine::onb::*;
 
-pub struct DiffuseMaterial {
-    
+pub struct DiffuseLightMaterial {
+    pub color: Vec3A,
 }
 
-impl Material for DiffuseMaterial {
+impl Material for DiffuseLightMaterial {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
-        let onb = ONB::build_from_z(hit_result.normal);
-        let scattering_direction = onb.get_position(random_cosine_direction());
-        //let scattering_direction = onb.get_position(random_in_hemisphere(hit_result.normal));
-        //let scattering_direction = random_in_hemisphere(hit_result.normal);
-        let pdf = scattering_direction.dot(onb.z) / std::f32::consts::PI;
-        (Vec3A::ONE, Some(scattering_direction.normalize()), pdf)
+        (Vec3A::ONE, None, 1.0)
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
-        Vec3A::ZERO
+        self.color
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattered_direction: Vec3A) -> f32 {

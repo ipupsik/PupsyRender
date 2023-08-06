@@ -1,5 +1,4 @@
-use glam::{Vec3A, Vec2};
-use std::{collections::HashMap, hash};
+use glam::{Vec3A};
 
 pub struct Vertex {
     pub position: Vec3A,

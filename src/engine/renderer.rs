@@ -2,19 +2,14 @@ use crate::engine::camera::*;
 use crate::engine::render_context::*;
 use crate::engine::math::ray::*;
 use glam::{Vec3A};
-use crate::engine::scene::*;
-use crate::engine::geometry::traceable::HitResult;
 use crate::engine::geometry::bvh::node::*;
 use rand::Rng;
 
 use image::{ImageBuffer};
-use std::env;
 use std::sync::{Arc};
 use image::{Rgb};
 
 use super::geometry::traceable::Traceable;
-use super::material::Material;
-use super::material::diffuse::*;
 
 use std::thread::{self};
 use std::sync::*;
@@ -39,22 +34,31 @@ impl Renderer {
 
     fn sample_scene(ray : &Ray, bvh : &Node, depth : u32) -> Vec3A {
         let mut ray = ray.clone();
-        let mut sample = Vec3A::ONE;
+        let mut average_sample = Vec3A::ONE;
         for i in 0..depth {
             let hit_result_option = bvh.hit(&ray, 0.001, f32::MAX);
 
             if !hit_result_option.is_some() {
                 let t = 0.5 * (ray.direction.y + 1.0);
                 let sky = (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
-                return sample * sky;
+                return average_sample * sky;
             }
 
             let hit_result = hit_result_option.unwrap();
 
-            sample *= hit_result.material.sample(&ray, &hit_result);
-            let scatter = hit_result.material.scatter(&ray, &hit_result);
+            let (mut sample, scatter_option, pdf) = hit_result.material.scatter(&ray, &hit_result);
+            let emmission = hit_result.material.emit(&ray, &hit_result);
 
-            ray = Ray{origin : hit_result.position, direction : scatter.normalize()};
+            if scatter_option.is_some() {
+                let scatter = scatter_option.unwrap();
+                ray = Ray{origin : hit_result.position, direction : scatter.normalize()};
+
+                let scattering_pdf = hit_result.material.scattering_pdf(&ray, &hit_result, scatter.normalize());
+                sample = sample * scattering_pdf / pdf;
+            } else {
+                return average_sample * emmission;
+            }
+            average_sample = emmission + average_sample * sample;
         }
 
         //sample
@@ -63,7 +67,7 @@ impl Renderer {
 
     pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>) {
         let height: u32 = 512;
-        let width: u32 = (height as f32 * camera.aspect_ratio) as u32;
+        let width: u32 = (height as f32 * camera.aspect_ratio()) as u32;
     
         struct WorkerInfo {
             pub back_buffer_chunk: Vec<Vec3A>,
@@ -150,7 +154,7 @@ impl Renderer {
                 }
             }
         
-            rgb_frame_buffer.save(format!("example/{}.png", camera.name)).unwrap();
+            rgb_frame_buffer.save(format!("example/{}.png", camera.name())).unwrap();
         }
 
         for thr in threads

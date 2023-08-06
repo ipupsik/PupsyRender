@@ -16,6 +16,28 @@ pub fn random_in_unit_sphere() -> Vec3A {
     }
 }
 
+pub fn random_in_hemisphere(normal: Vec3A) -> Vec3A {
+    let point = random_in_unit_sphere();
+    if normal.dot(point) > 0.0 {
+        return point;
+    }
+    else {
+        return -point;
+    }
+}
+
+pub fn random_cosine_direction() -> Vec3A {
+    let r1: f32 = rand::thread_rng().gen_range(0.0..1.0);
+    let r2: f32 = rand::thread_rng().gen_range(0.0..1.0);
+    let z = (1.0 - r2).sqrt();
+
+    let phi = 2.0 * std::f32::consts::PI * r1;
+    let x = phi.cos() * r2.sqrt();
+    let y = phi.sin() * r2.sqrt();
+
+    Vec3A::new(x, y, z)
+}
+
 pub fn decode_triangle_vec3_indexed(
     buffer : &Vec<u8>, offset: usize, stride: usize, raw_size: usize,
     indices_buffer : &Vec<u8>, indices_offset : usize, indices_stride: usize,  indices_raw_size: usize

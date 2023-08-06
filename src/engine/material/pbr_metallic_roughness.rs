@@ -5,11 +5,14 @@ use crate::engine::math::ray::*;
 use crate::engine::math::utils::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::sampler::sampler::*;
-use crate::engine::texture::*;
+use crate::engine::onb::*;
+use super::diffuse::*;
 
 use glam::{Vec2, Vec3A, Vec4};
 
 pub struct PBRMetallicRoughnessMaterial {
+    pub diffuse: DiffuseMaterial,
+
     pub base_color_factor: Vec4,
 
     pub base_color_texture: Arc<Texture2D>,
@@ -90,6 +93,7 @@ impl PBRMetallicRoughnessMaterial {
 
     pub fn new() -> Self {
         Self {
+            diffuse: DiffuseMaterial{},
             base_color_factor: Vec4::ONE,
             base_color_texture: Arc::new(Texture2D::null()),
             base_color_texture_sampler: Sampler::new(),
@@ -106,20 +110,33 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMetallicRoughnessMaterial {
-    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> Vec3A {
+    fn scatter(&self, ray: &Ray, hit_result: &HitResult) -> (Vec3A, Option<Vec3A>, f32) {
         let metallic_roughness = self.metalic_roughness_texture.sample(
             &self.metalic_roughness_texture_sampler, 
             self.metalic_roughness_texture.texture.get_uv_by_index(&hit_result.uvs)
         );
 
-        reflect(ray.direction, hit_result.normal) + (1.0 - metallic_roughness.x) * random_in_unit_sphere()
-    }
+        let (_, scattering_direction, pdf) = self.diffuse.scatter(&ray, &hit_result);
 
-    fn sample(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         let light_vector = Vec3A::new(0.0, 0.0, 1.0);
 
-        let sample = self.CookTorrance_GGX(hit_result.normal, light_vector, -ray.direction, hit_result);        
+        let mut sample = self.CookTorrance_GGX(hit_result.normal, light_vector, -ray.direction, hit_result);        
 
-        return Vec3A::from(sample);
+        //sample = Vec4::ONE;
+        sample *= self.base_color_factor;
+        sample = sample * self.base_color_texture.sample(
+            &self.base_color_texture_sampler, 
+            self.base_color_texture.texture.get_uv_by_index(&hit_result.uvs)
+        );
+
+        return (Vec3A::from(sample), scattering_direction, pdf);
+    }
+
+    fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
+        Vec3A::ZERO
+    }
+
+    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattered_direction: Vec3A) -> f32 {
+        return self.diffuse.scattering_pdf(&ray, &hit_result, scattered_direction);
     }
 }
