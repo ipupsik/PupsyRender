@@ -11,7 +11,7 @@ pub struct ONB {
 
 impl ONB {
     pub fn build_from_z(z: Vec3A) -> Self {
-        let a = if z.x > 0.0 {Vec3A::new(0.0, 1.0, 0.0)} else {Vec3A::new(1.0, 0.0, 0.0)};
+        let a = if z.x.abs() > 0.9 {Vec3A::new(0.0, 1.0, 0.0)} else {Vec3A::new(1.0, 0.0, 0.0)};
         let y = z.cross(a).normalize();
         let x = z.cross(y);
         Self {

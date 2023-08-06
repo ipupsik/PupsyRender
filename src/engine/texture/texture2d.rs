@@ -32,9 +32,8 @@ impl Texture2D {
 
         let color = self.texture.raw_texture.get_pixel(x as u32, y as u32);
 
-        let mut final_color = Vec4::new(color[0] as f32, color[1] as f32, color[2] as f32, color[3] as f32);
-        final_color /= 256.0;
+        let final_color = Vec4::new(color[0] as f32, color[1] as f32, color[2] as f32, color[3] as f32);
 
-        final_color
+        final_color / (256.0 - 1.0)
     }
 }

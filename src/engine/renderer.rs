@@ -46,15 +46,14 @@ impl Renderer {
 
             let hit_result = hit_result_option.unwrap();
 
-            let (mut sample, scatter_option, pdf) = hit_result.material.scatter(&ray, &hit_result);
+            let (mut sample, scatter_option, scattered_pdf, pdf) = hit_result.material.scatter(&ray, &hit_result);
             let emmission = hit_result.material.emit(&ray, &hit_result);
 
             if scatter_option.is_some() {
                 let scatter = scatter_option.unwrap();
-                ray = Ray{origin : hit_result.position, direction : scatter.normalize()};
+                ray = Ray{origin : hit_result.position, direction : scatter};
 
-                let scattering_pdf = hit_result.material.scattering_pdf(&ray, &hit_result, scatter.normalize());
-                sample = sample * scattering_pdf / pdf;
+                sample = sample * scattered_pdf / pdf;
             } else {
                 return average_sample * emmission;
             }
@@ -63,6 +62,7 @@ impl Renderer {
 
         //sample
         Vec3A::ZERO
+        //average_sample
     }
 
     pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>) {

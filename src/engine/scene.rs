@@ -458,7 +458,7 @@ impl Scene {
             DiffuseLightMaterial{color: Vec3A::new(2.0, 2.0, 2.0)}
         );
 
-        //self.geometry.push(Arc::new(Sphere{material: diffuse_light_material.clone(), radius : 0.7, position : Vec3A::new(-3.0, 1.0, 0.0)}));
+        self.geometry.push(Arc::new(Sphere{material: diffuse_light_material.clone(), radius : 0.7, position : Vec3A::new(-6.5, 1.0, 0.0)}));
         //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));

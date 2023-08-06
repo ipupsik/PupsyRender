@@ -17,7 +17,7 @@ pub trait Material {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> (
         Vec3A /* Attenuation */, 
         Option<Vec3A> /* Scatter */,
+        f32 /* Scattered PDF */,
         f32 /* Direction PDF */);
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A;
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattered_direction: Vec3A) -> f32;
 }
