@@ -63,6 +63,10 @@ impl Traceable for Node {
         return self.right.hit(ray, t_min, t_max);
     }
 
+    fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
+        0.0
+    }
+
     fn bounding_box(&self) -> AABB {
         self.aabb
     }

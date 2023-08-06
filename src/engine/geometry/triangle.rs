@@ -70,6 +70,22 @@ impl Traceable for Triangle {
             uvs: uvs, front_face: front_face, material: self.material.clone() });
     }
 
+    fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
+        let hit_result_option = self.hit(ray, t_min, t_max);
+        if (!hit_result_option.is_some()) {
+            return 0.0;
+        }
+        let hit_result = hit_result_option.unwrap();
+
+        let area = 0.5 * (self.vertices[0].position - self.vertices[1].position).cross(
+            self.vertices[0].position - self.vertices[2].position
+        ).length();
+        let distance_squared = hit_result.t * hit_result.t;
+        let cosine = ray.direction.dot(hit_result.normal).abs();
+
+        return distance_squared / (cosine * area);
+    }
+
     fn bounding_box(&self) -> AABB {
         AABB::new(
             self.vertices[0].position.min(self.vertices[1].position.min(self.vertices[2].position)),

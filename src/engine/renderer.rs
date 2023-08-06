@@ -3,6 +3,7 @@ use crate::engine::render_context::*;
 use crate::engine::math::ray::*;
 use glam::{Vec3A};
 use crate::engine::geometry::bvh::node::*;
+use crate::engine::material::pdf::cosine::*;
 use rand::Rng;
 
 use image::{ImageBuffer};
@@ -10,6 +11,7 @@ use std::sync::{Arc};
 use image::{Rgb};
 
 use super::geometry::traceable::Traceable;
+use super::material::pdf::PDF;
 
 use std::thread::{self};
 use std::sync::*;
@@ -46,11 +48,16 @@ impl Renderer {
 
             let hit_result = hit_result_option.unwrap();
 
-            let (mut sample, scatter_option, scattered_pdf, pdf) = hit_result.material.scatter(&ray, &hit_result);
+            let (mut sample, scatter_option, scattered_pdf) = hit_result.material.scatter(&ray, &hit_result);
             let emmission = hit_result.material.emit(&ray, &hit_result);
 
             if scatter_option.is_some() {
-                let scatter = scatter_option.unwrap();
+                let mut scatter = scatter_option.unwrap();
+
+                let cosine_pdf: CosinePDF = PDF::new(hit_result.normal);
+                scatter = cosine_pdf.generate();
+                let pdf = cosine_pdf.value(scatter);
+
                 ray = Ray{origin : hit_result.position, direction : scatter};
 
                 sample = sample * scattered_pdf / pdf;
