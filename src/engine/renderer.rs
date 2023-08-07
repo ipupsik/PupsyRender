@@ -53,10 +53,34 @@ impl Renderer {
 
             let hit_result = &hit_result_option.unwrap();
 
-            let scatter_result = traceable.material().scatter(&ray, &hit_result);
+            let mut light_scatter = Vec3A::ZERO;
+            let mut light_pdf_value = 0.0;
+
+            // TODO: Do not calculate light pdfs twice
+            if lights.len() > 0 {
+                let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
+                let mut weights = Vec::new();
+
+                let uniform_weight = 1.0 / lights.len() as f32;
+
+                for light in lights {
+                    pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
+                    weights.push(uniform_weight);
+                }
+
+                let light_pdf = Rc::new(MixPDF{ 
+                    pdfs: pdfs,
+                    weights: weights});
+
+                light_scatter = light_pdf.generate();
+                light_pdf_value = light_pdf.value(light_scatter);
+            }
+
+            let scatter_result = traceable.material().scatter(&ray, &hit_result, 
+                &Ray{origin : hit_result.position, direction : light_scatter}
+            );
 
             let emmission = traceable.material().emit(&ray, &scatter_result.hit_result);
-
             let mut sample = scatter_result.attenuation;
 
             if scatter_result.scatter.is_some() {
@@ -68,14 +92,14 @@ impl Renderer {
                 if lights.len() > 0 {
                     let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
                     let mut weights = Vec::new();
-
+    
                     let uniform_weight = 1.0 / lights.len() as f32;
-
+    
                     for light in lights {
-                        pdfs.push(Rc::new(GeometryPDF{origin: scatter_result.hit_result.position, geometry: light.clone()}));
+                        pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
                         weights.push(uniform_weight);
                     }
-
+    
                     let light_pdf = Rc::new(MixPDF{ 
                         pdfs: pdfs,
                         weights: weights});

@@ -106,8 +106,8 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMetallicRoughnessMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
-        let mut scatter_result = self.diffuse.scatter(&ray, hit_result);
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Ray) -> ScatterResult {
+        let mut scatter_result = self.diffuse.scatter(&ray, &hit_result, &light_scattering);
 
         if self.normal_texture.valid() {
             let mut normal_map = Vec3A::from(self.normal_texture.sample(
@@ -123,8 +123,6 @@ impl Material for PBRMetallicRoughnessMaterial {
             scatter_result.hit_result.normal = scatter_result.hit_result.normal.normalize();
         }  
 
-        let light_vector = Vec3A::new(0.0, 0.0, 1.0);
-
         let mut albedo = Vec4::ONE;
         albedo *= self.base_color_factor;
         albedo = albedo * self.base_color_texture.sample(
@@ -132,9 +130,7 @@ impl Material for PBRMetallicRoughnessMaterial {
             self.base_color_texture.texture.get_uv_by_index(&scatter_result.hit_result.uvs)
         );   
 
-        let mut sample = self.CookTorrance_GGX(scatter_result.hit_result.normal, light_vector, -ray.direction, Vec3A::from(albedo),  hit_result);           
-
-        sample = albedo;
+        let mut sample = self.CookTorrance_GGX(scatter_result.hit_result.normal, light_scattering.direction, -ray.direction, Vec3A::from(albedo),  hit_result);
 
         if albedo.w < 0.99 {
             sample = Vec4::ONE;

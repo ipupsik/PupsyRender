@@ -35,8 +35,12 @@ impl AABB {
         b: &'a Arc<dyn Mesh>,
         axis: usize,
     ) -> Ordering {
-        let a = a.bounding_box().min[axis];
-        let b: f32 = b.bounding_box().min[axis];
+        // TODO: Code works faster with invalid sorting?
+        let mut box_a = AABB::new(Vec3A::ZERO, Vec3A::ZERO, Arc::new(DiffuseMaterial{}));
+        let mut box_b = AABB::new(Vec3A::ZERO, Vec3A::ZERO, Arc::new(DiffuseMaterial{}));
+
+        let a = box_a.min[axis];
+        let b = box_b.min[axis];
         a.partial_cmp(&b).unwrap()
     }
 }

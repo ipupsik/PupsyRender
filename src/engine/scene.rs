@@ -497,10 +497,10 @@ impl Scene {
             UVMaterial{diffuse: DiffuseMaterial{}}
         );
         let diffuse_light_material1 = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(1.4, 0.1, 0.2)}
+            DiffuseLightMaterial{color: Vec3A::new(1.3, 1.3, 1.3)}
         );
         let diffuse_light_material2 = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(0.05, 1.3, 0.0)}
+            DiffuseLightMaterial{color: Vec3A::new(1.3, 1.3, 1.3)}
         );
         let diffuse_light_material3 = Arc::new(
             DiffuseLightMaterial{color: Vec3A::new(1.2, 1.2, 1.5)}
@@ -509,19 +509,19 @@ impl Scene {
             DiffuseLightMaterial{color: Vec3A::new(0.1, 0.05, 1.5)}
         );
 
-        let sphere1 = Arc::new(Sphere::new(diffuse_light_material1.clone(), 0.2, Vec3A::new(-6.5, 0.5, -1.5)));
-        let sphere2 = Arc::new(Sphere::new(diffuse_light_material2.clone(), 0.2, Vec3A::new(-2.5, 2.0, 0.0)));
-        let sphere3 = Arc::new(Sphere::new(diffuse_light_material3.clone(), 0.2, Vec3A::new(-6.5, 0.5, 1.0)));
-        let sphere4 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.2, Vec3A::new(8.0, 1.5, -0.5)));
+        let sphere1 = Arc::new(Sphere::new(diffuse_light_material1.clone(), 0.2, Vec3A::new(-0.5, 0.5, 1.0)));
+        let sphere2 = Arc::new(Sphere::new(diffuse_light_material2.clone(), 0.2, Vec3A::new(0.5, 0.5, 1.0)));
+        let sphere3 = Arc::new(Sphere::new(diffuse_light_material3.clone(), 0.2, Vec3A::new(-0.5, 0.5, 1.0)));
+        let sphere4 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.2, Vec3A::new(0.0, 0.5, -0.5)));
 
         self.lights.push(sphere1.clone());
         self.geometry.push(sphere1.clone());
         self.lights.push(sphere2.clone());
         self.geometry.push(sphere2.clone());
-        self.lights.push(sphere3.clone());
-        self.geometry.push(sphere3.clone());
-        self.lights.push(sphere4.clone());
-        self.geometry.push(sphere4.clone());
+        //self.lights.push(sphere3.clone());
+        //self.geometry.push(sphere3.clone());
+        //self.lights.push(sphere4.clone());
+        //self.geometry.push(sphere4.clone());
         //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));
