@@ -41,15 +41,12 @@ impl AABB {
 
 impl Traceable for AABB {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
-        let mut t_min = t_min;
-        let mut t_max = t_max;
-
-        let t_min = (self.min - ray.origin) / ray.direction;
-        let t_max = (self.max - ray.origin) / ray.direction;
-        let t1 = t_min.min(t_max);
-        let t2 = t_min.max(t_max);
-        let t_near = t1.max_element();
-        let t_far = t2.min_element();
+        let aabb_t_min = (self.min - ray.origin) / ray.direction;
+        let aabb_t_max = (self.max - ray.origin) / ray.direction;
+        let t1 = aabb_t_min.min(aabb_t_max);
+        let t2 = aabb_t_min.max(aabb_t_max);
+        let t_near = t1.max_element().max(t_min);
+        let t_far = t2.min_element().min(t_max);
 
         if t_near <= t_far && t_far >= 0.0 {
             return Some(HitResult::new());
