@@ -1,4 +1,4 @@
-use crate::engine::math::ray::*;
+use crate::engine::{math::ray::*, material::Material};
 use crate::engine::geometry::traceable::*;
 use glam::{Vec3A};
 use std::sync::*;
@@ -12,14 +12,14 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(objects: &Vec<Arc<dyn Traceable>>, min_index: usize, max_index: usize) -> Self {
+    pub fn new(objects: &Vec<Arc<dyn Traceable>>, min_index: usize, max_index: usize, dummy_material: &Arc<dyn Material>) -> Self {
         let mut objects = objects[min_index..max_index].to_vec(); // Create a modifiable array of the source scene objects
         let axis = rand::thread_rng().gen_range(0..2);
 
         let count = objects.len();
 
-        let mut left: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO));
-        let mut right: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO));
+        let mut left: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO, dummy_material.clone()));
+        let mut right: Arc<dyn Traceable> = Arc::new(AABB::new(Vec3A::ZERO, Vec3A::ZERO, dummy_material.clone()));
 
         if count == 1 {
             left = objects[0].clone();
@@ -29,8 +29,8 @@ impl Node {
 
             objects.sort_by(|a, b| AABB::cmp(a, b, axis));
 
-            left =  Arc::new(Self::new(&objects, 0, mid));
-            right = Arc::new(Self::new(&objects, mid, count));
+            left =  Arc::new(Self::new(&objects, 0, mid, dummy_material));
+            right = Arc::new(Self::new(&objects, mid, count, dummy_material));
         }
 
         let aabb = left.bounding_box().extend(&right.bounding_box());

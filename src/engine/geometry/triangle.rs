@@ -23,6 +23,7 @@ impl Triangle {
         let aabb = AABB::new(
             v1.position.min(v2.position.min(v3.position)),
             v1.position.max(v2.position.max(v3.position)),
+            material.clone()
         );
 
         Self {

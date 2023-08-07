@@ -26,16 +26,5 @@ pub struct HitResult {
 }
 
 impl HitResult {
-    pub fn new() -> Self {
-        Self {
-            position: Vec3A::new(0.0, 0.0, 0.0),
-            t: f32::MAX,
-            normal: Vec3A::ZERO,
-            binormal: Vec3A::ZERO,
-            tangent: Vec3A::ZERO,
-            uvs: Vec::new(),
-            front_face: true,
-            material: Arc::new(DiffuseMaterial{})
-        }
-    }
+
 }

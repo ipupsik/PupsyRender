@@ -35,7 +35,10 @@ use std::fs;
 pub struct Scene {
     pub geometry: Vec<Arc<dyn Traceable>>,
     pub lights: Vec<Arc<dyn Traceable>>,
+
     pub materials: Vec<Arc<dyn Material>>,
+    pub dummy_material: Arc<dyn Material>,
+
     pub textures: Vec<Arc<Texture>>,
     pub bvh: Node,
     pub cameras: Vec<Arc<PerspectiveCamera>>
@@ -57,18 +60,20 @@ impl GLTFContext {
 
 impl Scene {
     pub fn new() -> Self {
+        let dummy_material: Arc<dyn Material> = Arc::new(DiffuseMaterial{});
         Self { 
-            bvh: Node::new(&Vec::new(), 0, 0),
+            bvh: Node::new(&Vec::new(), 0, 0, &dummy_material),
             geometry : Vec::new(),
             lights: Vec::new(),
             materials : Vec::new(),
+            dummy_material: dummy_material,
             textures : Vec::new(),
             cameras: Vec::new(),
         }
     }
 
     pub fn build_bvh(&mut self) {
-        self.bvh = Node::new(&self.geometry, 0, self.geometry.len());
+        self.bvh = Node::new(&self.geometry, 0, self.geometry.len(), &self.dummy_material);
     }
 
     fn load_gltf_material(&mut self, context : &mut GLTFContext, material: gltf::material::Material) -> Arc<dyn Material> {

@@ -1,20 +1,23 @@
+use crate::engine::material::Material;
 use crate::engine::math::ray::*;
 use crate::engine::geometry::traceable::*;
 use glam::{Vec3A};
 use std::sync::*;
 use std::cmp::Ordering;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct AABB {
     pub min: Vec3A,
-    pub max: Vec3A
+    pub max: Vec3A,
+    pub dummy_material: Arc<dyn Material>
 }
 
 impl AABB {
-    pub fn new(min: Vec3A, max: Vec3A) -> Self {
+    pub fn new(min: Vec3A, max: Vec3A, dummy_material: Arc<dyn Material>) -> Self {
         Self {
             min: min, 
             max: max,
+            dummy_material: dummy_material.clone()
         }
     }
 
@@ -22,6 +25,7 @@ impl AABB {
         AABB::new(
             self.min.min(other_aabb.min),
             self.max.max(other_aabb.max),
+            self.dummy_material.clone()
         )
     }
 
@@ -30,11 +34,8 @@ impl AABB {
         b: &'a Arc<dyn Traceable>,
         axis: usize,
     ) -> Ordering {
-        let mut box_a = AABB::new(Vec3A::ZERO, Vec3A::ZERO);
-        let mut box_b = AABB::new(Vec3A::ZERO, Vec3A::ZERO);
-
-        let a = box_a.min[axis];
-        let b = box_b.min[axis];
+        let a = a.bounding_box().min[axis];
+        let b = b.bounding_box().min[axis];
         a.partial_cmp(&b).unwrap()
     }
 }
@@ -49,7 +50,16 @@ impl Traceable for AABB {
         let t_far = t2.min_element().min(t_max);
 
         if t_near <= t_far && t_far >= 0.0 {
-            return Some(HitResult::new());
+            return Some(HitResult{
+                position : Vec3A::ZERO, 
+                t : 0.0, 
+                normal : Vec3A::ZERO, 
+                binormal : Vec3A::ZERO, 
+                tangent : Vec3A::ZERO, 
+                uvs: Vec::new(), 
+                front_face: false, 
+                material: self.dummy_material.clone()
+            });
         }
         return None;
     }

@@ -20,7 +20,8 @@ impl Sphere {
         radius : f32, position: Vec3A) -> Self {
         let aabb = AABB::new(
             position - Vec3A::new(radius, radius, radius),
-            position + Vec3A::new(radius, radius, radius)
+            position + Vec3A::new(radius, radius, radius),
+            material.clone()
         );
 
         Self {
