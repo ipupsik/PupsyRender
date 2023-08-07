@@ -76,13 +76,11 @@ impl Mesh for Sphere {
         if (!hit_result_option.is_some()) {
             return 0.0;
         }
-        let hit_result = hit_result_option.unwrap();
 
-        let area = 4.0 * std::f32::consts::PI * self.radius * self.radius;
-        let distance_squared = hit_result.t * hit_result.t;
-        let cosine = ray.direction.dot(hit_result.normal).abs();
+        let cos_theta_max = (1.0 - self.radius * self.radius / (self.position - ray.origin).length_squared()).sqrt();
+        let solid_angle = 2.0 * std::f32::consts::PI * (1.0 - cos_theta_max);
 
-        return distance_squared / (cosine * area);
+        return 1.0 / solid_angle;
     }
 
     fn random(&self) -> Vec3A {
