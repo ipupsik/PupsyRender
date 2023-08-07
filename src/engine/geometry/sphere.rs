@@ -45,8 +45,16 @@ impl Traceable for Sphere {
             front_face = false;
         }
 
-        Some(HitResult{position : position, t : t, normal : normal, 
-            uvs: Vec::new(), front_face: front_face, material: self.material.clone()})
+        Some(HitResult{
+            position : position, 
+            t : t, 
+            normal : normal, 
+            binormal : normal, 
+            tangent : normal, 
+            uvs: Vec::new(), 
+            front_face: front_face, 
+            material: self.material.clone()
+        })
     }
 
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {

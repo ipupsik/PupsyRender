@@ -13,12 +13,11 @@ pub struct DiffuseMaterial {
 
 impl Material for DiffuseMaterial {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
-        let onb = ONB::build_from_z(hit_result.normal);
-
         ScatterResult{
             attenuation: Vec3A::ONE, 
             scatter: Some(Rc::new(CosinePDF::new(hit_result.normal))),
-            alpha_masked: false
+            alpha_masked: false,
+            hit_result: hit_result.clone()
         }
     }
 

@@ -100,7 +100,7 @@ impl Scene {
             let normal_texture = normal_texture_option.unwrap();
             let mut image = &mut context.decoded_images[normal_texture.texture().source().index()];
             image.set_uv_index(normal_texture.tex_coord() as usize);
-            pbr_material.normal_texture = Arc::new(Texture2D::new(image.clone()));
+            pbr_material.pbr_metallic_roughness.normal_texture = Arc::new(Texture2D::new(image.clone()));
         }
         let occlusion_texture_option = material.occlusion_texture();
         if occlusion_texture_option.is_some() {
@@ -133,6 +133,8 @@ impl Scene {
                 let mut positions: Vec<[Vec3A; 3]> = Vec::new();
                 let mut uvs: Vec<[Vec3A; 3]> = Vec::new();
                 let mut normals: Vec<[Vec3A; 3]> = Vec::new();
+                let mut binormals: Vec<[Vec3A; 3]> = Vec::new();
+                let mut tangents: Vec<[Vec3A; 3]> = Vec::new();
 
                 for attribute in primitive.attributes() {
                     let sparse_option = attribute.1.sparse();
@@ -296,6 +298,34 @@ impl Scene {
 
                 let material = self.load_gltf_material(context, primitive.material());
 
+                for (index, normal) in normals.iter().enumerate() {
+                    let delta_pos1 = positions[index][1] - positions[index][0];
+                    let delta_pos2 = positions[index][2] - positions[index][0];
+
+                    let delta_uv1 = uvs[index][1] - uvs[index][0];
+                    let delta_uv2 = uvs[index][2] - uvs[index][0];
+
+                    let r = 1.0 / (delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x);
+
+                    let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
+                    let binormal = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * r; 
+
+                    let tangent = [
+                        tangent - normal[0].dot(tangent) * normal[0], 
+                        tangent - normal[1].dot(tangent) * normal[1], 
+                        tangent - normal[2].dot(tangent) * normal[2], 
+                    ];
+
+                    let binormal = [
+                        binormal - normal[0].dot(binormal) * normal[0] - tangent[0].dot(binormal) * tangent[0], 
+                        binormal - normal[1].dot(binormal) * normal[1] - tangent[1].dot(binormal) * tangent[1], 
+                        binormal - normal[2].dot(binormal) * normal[2] - tangent[2].dot(binormal) * tangent[2], 
+                    ];
+
+                    tangents.push(tangent);
+                    binormals.push(binormal);
+                }
+
                 assert!(positions.len() == 0 || positions.len() == normals.len());
                 assert!(normals.len() == 0||  uvs.len() % normals.len() == 0);
                 let triangles_count = positions.len();
@@ -315,9 +345,12 @@ impl Scene {
                         uvs3.push(uvs[j * triangles_count + i][2]);
                     }
 
-                    let vertex1 = Vertex::new(positions[i][0], normals[i][0], uvs1);
-                    let vertex2 = Vertex::new(positions[i][1], normals[i][1], uvs2);
-                    let vertex3 = Vertex::new(positions[i][2], normals[i][2], uvs3);
+                    let vertex1 = Vertex::new(positions[i][0], normals[i][0], 
+                        binormals[i][0], tangents[i][0], uvs1);
+                    let vertex2 = Vertex::new(positions[i][1], normals[i][1], 
+                        binormals[i][1], tangents[i][1], uvs2);
+                    let vertex3 = Vertex::new(positions[i][2], normals[i][2], 
+                        binormals[i][2], tangents[i][2], uvs3);
 
                     self.geometry.push(Arc::new(Triangle::new(material.clone(), vertex1, vertex2, vertex3)));
                 }

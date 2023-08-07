@@ -16,6 +16,9 @@ pub struct PBRMetallicRoughnessMaterial {
     pub base_color_texture: Arc<Texture2D>,
     pub base_color_texture_sampler: Sampler,
 
+    pub normal_texture: Arc<Texture2D>,
+    pub normal_texture_sampler: Sampler,
+
     pub metalic_roughness_texture: Arc<Texture2D>,
     pub metalic_roughness_texture_sampler: Sampler,
     pub metalic_factor: f32,
@@ -90,6 +93,8 @@ impl PBRMetallicRoughnessMaterial {
             base_color_texture_sampler: Sampler::new(),
             metalic_roughness_texture:  Arc::new(Texture2D::null()),
             metalic_roughness_texture_sampler: Sampler::new(),
+            normal_texture:  Arc::new(Texture2D::null()),
+            normal_texture_sampler: Sampler::new(),
             metalic_factor: 0.0,
             roughness_factor: 0.0
         }
@@ -102,18 +107,32 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 
 impl Material for PBRMetallicRoughnessMaterial {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
+        let mut scatter_result = self.diffuse.scatter(&ray, hit_result);
+
+        if self.normal_texture.valid() {
+            let mut normal_map = Vec3A::from(self.normal_texture.sample(
+                &self.normal_texture_sampler, 
+                self.normal_texture.texture.get_uv_by_index(&scatter_result.hit_result.uvs)
+            ));
+            normal_map = normal_map * 2.0 - Vec3A::ONE;
+
+            scatter_result.hit_result.normal = scatter_result.hit_result.normal + 
+                scatter_result.hit_result.tangent * normal_map.x + 
+                scatter_result.hit_result.binormal * normal_map.y;
+
+            scatter_result.hit_result.normal = scatter_result.hit_result.normal.normalize();
+        }  
+
+        let light_vector = Vec3A::new(0.0, 0.0, 1.0);
+
         let mut albedo = Vec4::ONE;
         albedo *= self.base_color_factor;
         albedo = albedo * self.base_color_texture.sample(
             &self.base_color_texture_sampler, 
-            self.base_color_texture.texture.get_uv_by_index(&hit_result.uvs)
-        );        
+            self.base_color_texture.texture.get_uv_by_index(&scatter_result.hit_result.uvs)
+        );   
 
-        let mut scatter_result = self.diffuse.scatter(&ray, &hit_result);
-
-        let light_vector = Vec3A::new(0.0, 0.0, 1.0);
-
-        let mut sample = self.CookTorrance_GGX(hit_result.normal, light_vector, -ray.direction, Vec3A::from(albedo),  hit_result);        
+        let mut sample = self.CookTorrance_GGX(scatter_result.hit_result.normal, light_vector, -ray.direction, Vec3A::from(albedo),  hit_result);           
 
         sample = albedo;
 
@@ -128,7 +147,7 @@ impl Material for PBRMetallicRoughnessMaterial {
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        self.diffuse.scattering_pdf(&ray, &hit_result, &scattering)
+        self.diffuse.scattering_pdf(&ray, hit_result, &scattering)
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

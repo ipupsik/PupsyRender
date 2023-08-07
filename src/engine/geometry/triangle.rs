@@ -11,7 +11,6 @@ pub struct Triangle {
     pub material: Arc<dyn Material>,
 
     pub vertices: [Vertex; 3],
-    pub normal: Vec3A,
 }
 
 impl Triangle {
@@ -21,7 +20,6 @@ impl Triangle {
         Self {
             material: material.clone(),
             vertices : [v1, v2, v3],
-            normal: Vec3A::ZERO
         }
     }
 }
@@ -66,9 +64,19 @@ impl Traceable for Triangle {
         }
         
         let normal = self.vertices[0].normal * (1.0 - v - u) + self.vertices[1].normal * u + self.vertices[2].normal * v;
+        let binormal = self.vertices[0].binormal * (1.0 - v - u) + self.vertices[1].binormal * u + self.vertices[2].binormal * v;
+        let tangent = self.vertices[0].tangent * (1.0 - v - u) + self.vertices[1].tangent * u + self.vertices[2].tangent * v;
 
-        return Some(HitResult { position: ray.at(t), t: t, normal: normal.normalize(), 
-            uvs: uvs, front_face: front_face, material: self.material.clone() });
+        return Some(HitResult { 
+            position: ray.at(t), 
+            t: t, 
+            normal: normal.normalize(), 
+            binormal: binormal.normalize(), 
+            tangent: tangent.normalize(), 
+            uvs: uvs, 
+            front_face: front_face, 
+            material: self.material.clone() 
+        });
     }
 
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {

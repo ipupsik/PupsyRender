@@ -20,10 +20,14 @@ impl Texture2D {
         }
     }
 
+    pub fn valid(&self) -> bool {
+        return self.texture.dimensions.len() == 2
+    }
+
     pub fn sample(&self, sampler : &Sampler, uv: Vec2) -> Vec4 {
         let uv = uv.fract();
 
-        if self.texture.dimensions.len() != 2 {
+        if !self.valid() {
             return Vec4::ZERO;
         }
 

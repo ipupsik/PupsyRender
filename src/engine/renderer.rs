@@ -53,7 +53,8 @@ impl Renderer {
             let hit_result = hit_result_option.unwrap();
 
             let scatter_result = hit_result.material.scatter(&ray, &hit_result);
-            let emmission = hit_result.material.emit(&ray, &hit_result);
+
+            let emmission = scatter_result.hit_result.material.emit(&ray, &scatter_result.hit_result);
 
             let mut sample = scatter_result.attenuation;
 
@@ -70,7 +71,7 @@ impl Renderer {
                     let uniform_weight = 1.0 / lights.len() as f32;
 
                     for light in lights {
-                        pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
+                        pdfs.push(Rc::new(GeometryPDF{origin: scatter_result.hit_result.position, geometry: light.clone()}));
                         weights.push(uniform_weight);
                     }
 
@@ -90,11 +91,11 @@ impl Renderer {
                     pdf_value = pdf.value(scatter);
                 }
 
-                let mut scattering_ray = Ray{origin : hit_result.position, direction : scatter};
-                let mut scattering_pdf_value = hit_result.material.scattering_pdf(&ray, &hit_result, &scattering_ray);
+                let mut scattering_ray = Ray{origin : scatter_result.hit_result.position, direction : scatter};
+                let mut scattering_pdf_value = scatter_result.hit_result.material.scattering_pdf(&ray, &scatter_result.hit_result, &scattering_ray);
 
                 if scatter_result.alpha_masked {
-                    scattering_ray = Ray{origin : hit_result.position, direction : ray.direction};
+                    scattering_ray = Ray{origin : scatter_result.hit_result.position, direction : ray.direction};
                     scattering_pdf_value = 1.0;
                     pdf_value = 1.0;
                 }

@@ -20,7 +20,8 @@ use self::pdf::PDF;
 pub struct ScatterResult {
     pub attenuation: Vec3A,
     pub scatter: Option<Rc<dyn PDF>> /* Scatter */,
-    pub alpha_masked: bool,  
+    pub alpha_masked: bool,
+    pub hit_result: HitResult,
 }
 
 pub trait Material {

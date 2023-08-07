@@ -12,9 +12,6 @@ use glam::{Vec3A};
 pub struct PBRMaterial {
     pub pbr_metallic_roughness: PBRMetallicRoughnessMaterial,
 
-    pub normal_texture: Arc<Texture2D>,
-    pub normal_texture_sampler: Sampler,
-
     pub occlusion_texture: Arc<Texture2D>,
     pub occlusion_texture_sampler: Sampler,
 
@@ -27,8 +24,6 @@ impl PBRMaterial {
     pub fn new() -> Self {
         Self {
             pbr_metallic_roughness: PBRMetallicRoughnessMaterial::new(),
-            normal_texture:  Arc::new(Texture2D::new(Texture::null())),
-            normal_texture_sampler: Sampler::new(),
             occlusion_texture:  Arc::new(Texture2D::new(Texture::null())),
             occlusion_texture_sampler: Sampler::new(),
             emissive_texture:  Arc::new(Texture2D::new(Texture::null())),
@@ -48,7 +43,7 @@ impl Material for PBRMaterial {
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        self.pbr_metallic_roughness.scattering_pdf(&ray, &hit_result, &scattering)
+        self.pbr_metallic_roughness.scattering_pdf(&ray, hit_result, &scattering)
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

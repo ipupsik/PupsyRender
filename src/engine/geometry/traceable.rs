@@ -13,10 +13,13 @@ pub trait Traceable {
     fn bounding_box(&self) -> AABB;
 }
 
+#[derive(Clone)]
 pub struct HitResult {
     pub position: Vec3A,
     pub t: f32,
     pub normal: Vec3A,
+    pub binormal: Vec3A,
+    pub tangent: Vec3A,
     pub uvs: Vec<Vec3A>,
     pub front_face: bool,
     pub material: Arc<dyn Material>,
@@ -27,7 +30,9 @@ impl HitResult {
         Self {
             position: Vec3A::new(0.0, 0.0, 0.0),
             t: f32::MAX,
-            normal: Vec3A::new(0.0, 0.0, 0.0),
+            normal: Vec3A::ZERO,
+            binormal: Vec3A::ZERO,
+            tangent: Vec3A::ZERO,
             uvs: Vec::new(),
             front_face: true,
             material: Arc::new(DiffuseMaterial{})

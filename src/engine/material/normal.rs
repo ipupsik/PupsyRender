@@ -13,7 +13,7 @@ pub struct NormalMaterial {
 
 impl Material for NormalMaterial {
     fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
-        let mut scatter_result = self.diffuse.scatter(&ray, &hit_result);
+        let mut scatter_result = self.diffuse.scatter(&ray, hit_result);
         let sample =  0.5 * (hit_result.normal + Vec3A::ONE);
         scatter_result.attenuation = sample;
 
@@ -21,7 +21,7 @@ impl Material for NormalMaterial {
     }
 
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        self.diffuse.scattering_pdf(&ray, &hit_result, &scattering)
+        self.diffuse.scattering_pdf(&ray, hit_result, &scattering)
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

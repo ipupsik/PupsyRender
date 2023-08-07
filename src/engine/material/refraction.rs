@@ -48,7 +48,8 @@ impl Material for RefractionMaterial {
         ScatterResult{
             attenuation: Vec3A::ONE, 
             scatter: Some(Rc::new(CosinePDF::new(direction))),
-            alpha_masked: false
+            alpha_masked: false,
+            hit_result: hit_result.clone()
         }
     }
 
