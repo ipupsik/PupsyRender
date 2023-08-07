@@ -34,8 +34,8 @@ impl Triangle {
     }
 }
 
-impl Traceable for Triangle {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+impl Mesh for Triangle {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Mesh) {
         let v0v1 = self.vertices[1].position - self.vertices[0].position;
         let v0v2 = self.vertices[2].position - self.vertices[0].position;
         let pvec = ray.direction.cross(v0v2);
@@ -44,7 +44,7 @@ impl Traceable for Triangle {
         // if the determinant is negative, the triangle is 'back facing'
         // if the determinant is close to 0, the ray misses the triangle
         if det.abs() < Triangle::EPSILON {
-            return None;
+            return (None, self);
         }
 
         let front_face = det < Triangle::EPSILON;
@@ -54,18 +54,18 @@ impl Traceable for Triangle {
         let tvec = ray.origin - self.vertices[0].position;
         let u = tvec.dot(pvec) * inv_det;
         if u < 0.0 || u > 1.0 {
-            return None;
+            return (None, self);
         }
 
         let qvec = tvec.cross(v0v1);
         let v = ray.direction.dot(qvec) * inv_det;
         if v < 0.0 || u + v > 1.0 {
-            return None;
+            return (None, self);
         }
         let t = v0v2.dot(qvec) * inv_det;
 
         if t < t_min || t > t_max {
-            return None;
+            return (None, self);
         }
 
         let mut uvs = self.vertices[0].uvs.clone();
@@ -77,20 +77,19 @@ impl Traceable for Triangle {
         let binormal = self.vertices[0].binormal * (1.0 - v - u) + self.vertices[1].binormal * u + self.vertices[2].binormal * v;
         let tangent = self.vertices[0].tangent * (1.0 - v - u) + self.vertices[1].tangent * u + self.vertices[2].tangent * v;
 
-        return Some(HitResult { 
+        return (Some(HitResult { 
             position: ray.at(t), 
             t: t, 
             normal: normal.normalize(), 
             binormal: binormal.normalize(), 
             tangent: tangent.normalize(), 
             uvs: uvs, 
-            front_face: front_face, 
-            material: self.material.clone() 
-        });
+            front_face: front_face,
+        }), self);
     }
 
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
-        let hit_result_option = self.hit(ray, t_min, t_max);
+        let (hit_result_option, traceable) = self.hit(ray, t_min, t_max);
         if (!hit_result_option.is_some()) {
             return 0.0;
         }
@@ -114,5 +113,9 @@ impl Traceable for Triangle {
 
     fn bounding_box(&self) -> &AABB {
         return &self.aabb;
+    }
+
+    fn material(&self) -> &Arc<dyn Material> {
+        return &self.material;
     }
 }

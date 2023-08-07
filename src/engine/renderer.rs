@@ -12,7 +12,7 @@ use std::rc::Rc;
 use std::sync::{Arc};
 use image::{Rgb};
 
-use super::geometry::traceable::Traceable;
+use super::geometry::traceable::Mesh;
 use super::material::pdf::PDF;
 use super::material::pdf::mix::MixPDF;
 use super::material::pdf::traceable::GeometryPDF;
@@ -38,11 +38,11 @@ impl Renderer {
        input / (Vec3A::ONE + input)
     }
 
-    fn sample_scene(ray : &Ray, bvh : &Node, lights: &Vec<Arc<dyn Traceable>>, depth : u32) -> Vec3A {
+    fn sample_scene(ray : &Ray, bvh : &Node, lights: &Vec<Arc<dyn Mesh>>, depth : u32) -> Vec3A {
         let mut ray = ray.clone();
         let mut average_sample = Vec3A::ONE;
         for i in 0..depth {
-            let hit_result_option = bvh.hit(&ray, 0.001, f32::MAX);
+            let (hit_result_option, traceable) = bvh.hit(&ray, 0.001, f32::MAX);
 
             if !hit_result_option.is_some() {
                 let t = 0.5 * (ray.direction.y + 1.0);
@@ -50,16 +50,16 @@ impl Renderer {
                 return average_sample * sky;
             }
 
-            let hit_result = hit_result_option.unwrap();
+            let hit_result = &hit_result_option.unwrap();
 
-            let scatter_result = hit_result.material.scatter(&ray, &hit_result);
+            let scatter_result = traceable.material().scatter(&ray, &hit_result);
 
-            let emmission = scatter_result.hit_result.material.emit(&ray, &scatter_result.hit_result);
+            let emmission = traceable.material().emit(&ray, &scatter_result.hit_result);
 
             let mut sample = scatter_result.attenuation;
 
             if scatter_result.scatter.is_some() {
-                let pdf = scatter_result.scatter.unwrap();
+                let pdf = &scatter_result.scatter.unwrap();
 
                 let mut scatter = Vec3A::ZERO;
                 let mut pdf_value = 0.0;
@@ -92,7 +92,7 @@ impl Renderer {
                 }
 
                 let mut scattering_ray = Ray{origin : scatter_result.hit_result.position, direction : scatter};
-                let mut scattering_pdf_value = scatter_result.hit_result.material.scattering_pdf(&ray, &scatter_result.hit_result, &scattering_ray);
+                let mut scattering_pdf_value = traceable.material().scattering_pdf(&ray, &scatter_result.hit_result, &scattering_ray);
 
                 if scatter_result.alpha_masked {
                     scattering_ray = Ray{origin : scatter_result.hit_result.position, direction : ray.direction};

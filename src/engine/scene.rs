@@ -18,7 +18,7 @@ use crate::engine::math::utils::*;
 use crate::engine::camera::*;
 
 use super::geometry::sphere;
-use super::geometry::traceable::Traceable;
+use super::geometry::traceable::Mesh;
 use super::geometry::triangle::*;
 use super::geometry::vertex::Vertex;
 
@@ -33,8 +33,8 @@ use std::io;
 use std::fs;
 
 pub struct Scene {
-    pub geometry: Vec<Arc<dyn Traceable>>,
-    pub lights: Vec<Arc<dyn Traceable>>,
+    pub geometry: Vec<Arc<dyn Mesh>>,
+    pub lights: Vec<Arc<dyn Mesh>>,
 
     pub materials: Vec<Arc<dyn Material>>,
     pub dummy_material: Arc<dyn Material>,
@@ -76,7 +76,7 @@ impl Scene {
         self.bvh = Node::new(&self.geometry, 0, self.geometry.len(), &self.dummy_material);
     }
 
-    fn load_gltf_material(&mut self, context : &mut GLTFContext, material: gltf::material::Material) -> Arc<dyn Material> {
+    fn load_gltf_material(&mut self, context : &mut GLTFContext, material: &gltf::material::Material) -> Arc<dyn Material> {
         let mut pbr_material = PBRMaterial::new();
 
         let pbr_metallic_roughness = material.pbr_metallic_roughness();
@@ -302,7 +302,7 @@ impl Scene {
                     }
                 }
 
-                let material = self.load_gltf_material(context, primitive.material());
+                let material = self.load_gltf_material(context, &primitive.material());
 
                 for (index, normal) in normals.iter().enumerate() {
                     let delta_pos1 = positions[index][1] - positions[index][0];
@@ -336,7 +336,7 @@ impl Scene {
                 assert!(normals.len() == 0||  uvs.len() % normals.len() == 0);
                 let triangles_count = positions.len();
 
-                let mut mesh_triangles: Vec<Arc<Box<dyn Traceable>>> = Vec::new();
+                let mut mesh_triangles: Vec<Arc<Box<dyn Mesh>>> = Vec::new();
                 mesh_triangles.reserve(triangles_count);
 
                 for i in 0..triangles_count {

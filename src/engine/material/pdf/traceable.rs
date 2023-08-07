@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use crate::engine::math::ray::Ray;
-use crate::engine::{onb::*, geometry::traceable::Traceable};
+use crate::engine::{onb::*, geometry::traceable::Mesh};
 use crate::engine::math::utils::*;
 use glam::{Vec2, Vec3A, Vec4};
 
 use super::*;
 
 pub struct GeometryPDF {
-    pub geometry: Arc<dyn Traceable>,
+    pub geometry: Arc<dyn Mesh>,
     pub origin: Vec3A
 }
 

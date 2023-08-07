@@ -33,15 +33,15 @@ impl Sphere {
     }
 }
 
-impl Traceable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+impl Mesh for Sphere {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Mesh) {
         let oc: Vec3A = ray.origin - self.position;
         let a: f32 = ray.direction.dot(ray.direction);
         let half_b: f32 = oc.dot(ray.direction);
         let c: f32 = oc.dot(oc) - self.radius * self.radius;
         let discriminant: f32 = half_b * half_b - a * c;
         if discriminant < 0.0 {
-            return None;
+            return (None, self);
         }
 
         let discriminant_sqrt = discriminant.sqrt();
@@ -49,7 +49,7 @@ impl Traceable for Sphere {
         if t < t_min || t > t_max {
             t = (-half_b + discriminant_sqrt) / a;
             if t < t_min {
-                return None;
+                return (None, self);
             }
         }
         let position = ray.at(t);
@@ -60,20 +60,19 @@ impl Traceable for Sphere {
             front_face = false;
         }
 
-        Some(HitResult{
+        (Some(HitResult{
             position : position, 
             t : t, 
             normal : normal, 
             binormal : normal, 
             tangent : normal, 
             uvs: Vec::new(), 
-            front_face: front_face, 
-            material: self.material.clone()
-        })
+            front_face: front_face,
+        }), self)
     }
 
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
-        let hit_result_option = self.hit(ray, t_min, t_max);
+        let (hit_result_option, traceable) = self.hit(ray, t_min, t_max);
         if (!hit_result_option.is_some()) {
             return 0.0;
         }
@@ -92,5 +91,9 @@ impl Traceable for Sphere {
 
     fn bounding_box(&self) -> &AABB {
         &self.aabb
+    }
+
+    fn material(&self) -> &Arc<dyn Material> {
+        return &self.material;
     }
 }
