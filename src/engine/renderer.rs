@@ -1,6 +1,7 @@
 use crate::engine::camera::*;
 use crate::engine::render_context::*;
 use crate::engine::math::ray::*;
+use crate::engine::scene;
 use glam::{Vec3A};
 use gltf::mesh::util::weights;
 use crate::engine::geometry::bvh::node::*;
@@ -191,6 +192,16 @@ impl Renderer {
                 for chunk in output_frame_buffer.iter() {
                     if linear_index < chunk.back_buffer_chunk.len() {
                         let mut scene_color = chunk.back_buffer_chunk[linear_index];
+
+                        if scene_color.x.is_nan() {
+                            scene_color.x = 0.0;
+                        }
+                        if scene_color.y.is_nan() {
+                            scene_color.y = 0.0;
+                        }
+                        if scene_color.z.is_nan() {
+                            scene_color.z = 0.0;
+                        }
         
                         //scene_color = Self::tone_mapping(scene_color);
                         scene_color *= render_context.spp as f32 / (chunk.sample_index as f32 + 1.0);
