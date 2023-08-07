@@ -9,6 +9,7 @@ use std::sync::*;
 
 pub struct Triangle {
     pub material: Arc<dyn Material>,
+    pub aabb: AABB,
 
     pub vertices: [Vertex; 3],
 }
@@ -16,10 +17,18 @@ pub struct Triangle {
 impl Triangle {
     pub const EPSILON: f32 = 1e-8;
     
-    pub fn new(material: Arc<dyn Material>, v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self{
+    pub fn new(material: Arc<dyn Material>, 
+        v1 : Vertex, v2 : Vertex, v3 : Vertex) -> Self {
+
+        let aabb = AABB::new(
+            v1.position.min(v2.position.min(v3.position)),
+            v1.position.max(v2.position.max(v3.position)),
+        );
+
         Self {
             material: material.clone(),
             vertices : [v1, v2, v3],
+            aabb: aabb
         }
     }
 }
@@ -102,10 +111,7 @@ impl Traceable for Triangle {
         self.vertices[0].position * (1.0 - v - u) + self.vertices[1].position * u + self.vertices[2].position * v
     }
 
-    fn bounding_box(&self) -> AABB {
-        AABB::new(
-            self.vertices[0].position.min(self.vertices[1].position.min(self.vertices[2].position)),
-            self.vertices[0].position.max(self.vertices[1].position.max(self.vertices[2].position)),
-        )
+    fn bounding_box(&self) -> &AABB {
+        return &self.aabb;
     }
 }

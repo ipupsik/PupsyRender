@@ -10,12 +10,26 @@ use std::{sync::*};
 pub struct Sphere {
     pub material: Arc<dyn Material>,
 
+    pub aabb: AABB,
     pub radius : f32,
     pub position: Vec3A,
 }
 
 impl Sphere {
+    pub fn new( material: Arc<dyn Material>,
+        radius : f32, position: Vec3A) -> Self {
+        let aabb = AABB::new(
+            position - Vec3A::new(radius, radius, radius),
+            position + Vec3A::new(radius, radius, radius)
+        );
 
+        Self {
+            material: material,
+            radius: radius,
+            position: position,
+            aabb: aabb,
+        }
+    }
 }
 
 impl Traceable for Sphere {
@@ -75,10 +89,7 @@ impl Traceable for Sphere {
         self.position + random_in_unit_sphere() * self.radius
     }
 
-    fn bounding_box(&self) -> AABB {
-        AABB::new(
-            self.position - Vec3A::new(self.radius, self.radius, self.radius),
-            self.position + Vec3A::new(self.radius, self.radius, self.radius)
-        )
+    fn bounding_box(&self) -> &AABB {
+        &self.aabb
     }
 }

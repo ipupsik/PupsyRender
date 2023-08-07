@@ -1,6 +1,7 @@
 use std::vec;
 use glam::{Vec3A, Vec4, Mat4};
 use image::GenericImageView;
+use crate::engine::geometry::bvh::aabb::AABB;
 use crate::engine::material::*;
 use crate::engine::material::diffuse::*;
 use crate::engine::material::diffuse_light::*;
@@ -503,10 +504,10 @@ impl Scene {
             DiffuseLightMaterial{color: Vec3A::new(0.1, 0.05, 1.5)}
         );
 
-        let sphere1 = Arc::new(Sphere{material: diffuse_light_material1.clone(), radius : 0.2, position : Vec3A::new(-6.5, 0.5, -1.5)});
-        let sphere2 = Arc::new(Sphere{material: diffuse_light_material2.clone(), radius : 0.2, position : Vec3A::new(-2.5, 2.0, 0.0)});
-        let sphere3 = Arc::new(Sphere{material: diffuse_light_material3.clone(), radius : 0.2, position : Vec3A::new(-6.5, 0.5, 1.0)});
-        let sphere4 = Arc::new(Sphere{material: diffuse_light_material4.clone(), radius : 0.2, position : Vec3A::new(8.0, 1.5, -0.5)});
+        let sphere1 = Arc::new(Sphere::new(diffuse_light_material1.clone(), 0.2, Vec3A::new(-6.5, 0.5, -1.5)));
+        let sphere2 = Arc::new(Sphere::new(diffuse_light_material2.clone(), 0.2, Vec3A::new(-2.5, 2.0, 0.0)));
+        let sphere3 = Arc::new(Sphere::new(diffuse_light_material3.clone(), 0.2, Vec3A::new(-6.5, 0.5, 1.0)));
+        let sphere4 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.2, Vec3A::new(8.0, 1.5, -0.5)));
 
         self.lights.push(sphere1.clone());
         self.geometry.push(sphere1.clone());

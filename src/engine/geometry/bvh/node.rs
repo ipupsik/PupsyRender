@@ -71,7 +71,7 @@ impl Traceable for Node {
         Vec3A::ZERO
     }
 
-    fn bounding_box(&self) -> AABB {
-        self.aabb
+    fn bounding_box(&self) -> &AABB {
+        &self.aabb
     }
 }

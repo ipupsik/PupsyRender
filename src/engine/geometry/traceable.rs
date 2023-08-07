@@ -10,7 +10,7 @@ pub trait Traceable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32;
     fn random(&self) -> Vec3A;
-    fn bounding_box(&self) -> AABB;
+    fn bounding_box(&self) -> &AABB;
 }
 
 #[derive(Clone)]

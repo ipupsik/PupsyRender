@@ -65,7 +65,7 @@ impl Traceable for AABB {
         Vec3A::ZERO
     }
 
-    fn bounding_box(&self) -> AABB {
-        *self
+    fn bounding_box(&self) -> &AABB {
+        self
     }
 }
