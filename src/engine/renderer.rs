@@ -54,31 +54,26 @@ impl Renderer {
             let hit_result = &hit_result_option.unwrap();
 
             let mut light_scatter = Vec3A::ZERO;
-            let mut light_pdf_value = 0.0;
 
-            // TODO: Do not calculate light pdfs twice
-            if lights.len() > 0 {
-                let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
-                let mut weights = Vec::new();
+            let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
+            let mut weights = Vec::new();
 
-                let uniform_weight = 1.0 / lights.len() as f32;
+            let uniform_weight = 1.0 / lights.len() as f32;
 
-                for light in lights {
-                    pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
-                    weights.push(uniform_weight);
-                }
-
-                let light_pdf = Rc::new(MixPDF{ 
-                    pdfs: pdfs,
-                    weights: weights});
-
-                light_scatter = light_pdf.generate();
-                light_pdf_value = light_pdf.value(light_scatter);
+            for light in lights {
+                pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
+                weights.push(uniform_weight);
             }
 
-            let scatter_result = traceable.material().scatter(&ray, &hit_result, 
-                &Ray{origin : hit_result.position, direction : light_scatter}
-            );
+            let light_pdf = Rc::new(MixPDF{ 
+                pdfs: pdfs,
+                weights: weights});
+
+            light_scatter = light_pdf.generate();
+
+            let light = if lights.len() > 0 {Some(Ray{origin : hit_result.position, direction : light_scatter})} else {None};
+
+            let scatter_result = traceable.material().scatter(&ray, &hit_result, &light);
 
             let emmission = traceable.material().emit(&ray, &scatter_result.hit_result);
             let mut sample = scatter_result.attenuation;
@@ -90,20 +85,6 @@ impl Renderer {
                 let mut pdf_value = 0.0;
 
                 if lights.len() > 0 {
-                    let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
-                    let mut weights = Vec::new();
-    
-                    let uniform_weight = 1.0 / lights.len() as f32;
-    
-                    for light in lights {
-                        pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
-                        weights.push(uniform_weight);
-                    }
-    
-                    let light_pdf = Rc::new(MixPDF{ 
-                        pdfs: pdfs,
-                        weights: weights});
-
                     let final_pdf = MixPDF{ 
                         pdfs: vec![pdf.clone(), light_pdf.clone()],
                         weights: vec![0.5, 0.5]};
@@ -192,9 +173,19 @@ impl Renderer {
             
                             let ray = camera.get_ray(u, 1.0 - v);
             
-                            let current_sample = Self::sample_scene(&ray, 
+                            let mut current_sample = Self::sample_scene(&ray, 
                                 &render_context.scene.bvh, &render_context.scene.lights, render_context.max_depth);
         
+                            if current_sample.x.is_nan() {
+                                current_sample.x = 1.0;
+                            }
+                            if current_sample.y.is_nan() {
+                                current_sample.y = 1.0;
+                            }
+                            if current_sample.z.is_nan() {
+                                current_sample.z = 1.0;
+                            }
+
                             frame_buffer_slice[i] += current_sample / render_context.spp as f32;
                         }
                         tx.send((frame_buffer_slice.clone(), thr, sample_index)).unwrap();
@@ -216,16 +207,6 @@ impl Renderer {
                 for chunk in output_frame_buffer.iter() {
                     if linear_index < chunk.back_buffer_chunk.len() {
                         let mut scene_color = chunk.back_buffer_chunk[linear_index];
-
-                        if scene_color.x.is_nan() {
-                            scene_color.x = 0.0;
-                        }
-                        if scene_color.y.is_nan() {
-                            scene_color.y = 0.0;
-                        }
-                        if scene_color.z.is_nan() {
-                            scene_color.z = 0.0;
-                        }
         
                         //scene_color = Self::tone_mapping(scene_color);
                         scene_color *= render_context.spp as f32 / (chunk.sample_index as f32 + 1.0);

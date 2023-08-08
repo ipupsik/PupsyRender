@@ -1,4 +1,5 @@
 pub mod cosine;
+pub mod cook_torrance_distribution;
 pub mod mix;
 pub mod traceable;
 

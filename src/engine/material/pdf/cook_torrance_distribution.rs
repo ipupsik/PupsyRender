@@ -5,19 +5,21 @@ use glam::{Vec2, Vec3A, Vec4};
 use super::*;
 
 #[derive(Copy, Clone)]
-pub struct CosinePDF {
+pub struct CookTorranceDistributionPDF {
     base_pdf: PDFBase,
+    roughness: f32
 }
 
-impl CosinePDF {
-    pub fn new(forward: Vec3A) -> Self {
+impl CookTorranceDistributionPDF {
+    pub fn new(forward: Vec3A, roughness: f32) -> Self {
         Self {
-            base_pdf: PDFBase { basis: ONB::build_from_z(forward) }
+            base_pdf: PDFBase { basis: ONB::build_from_z(forward) },
+            roughness: roughness
         }
     }
 }
 
-impl PDF for CosinePDF {
+impl PDF for CookTorranceDistributionPDF {
     fn value(&self, direction: Vec3A) -> f32 {
         let cosine = self.base_pdf.basis.z.dot(direction);
         let scattered_pdf =  if cosine < 0.0 {0.0} else {cosine / std::f32::consts::PI};
@@ -26,7 +28,9 @@ impl PDF for CosinePDF {
     }
 
     fn generate(&self) -> Vec3A {
-        let scattering_direction = self.base_pdf.basis.get_position(random_hemisphere_direction()).normalize();
+        let scattering_direction = self.base_pdf.basis.get_position(
+            random_ggx_hemisphere_direction(self.roughness * self.roughness)
+        ).normalize();
         scattering_direction
     }
 }

@@ -38,7 +38,7 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Ray) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
         self.pbr_metallic_roughness.scatter(&ray, &hit_result, &light_scattering)
     }
 

@@ -178,7 +178,7 @@ impl Scene {
                                         indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_size
                                     );
 
-                                    decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 0.0)))));
+                                    decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 1.0)))));
 
                                     match attribute.0 {
                                         gltf::Semantic::Positions => positions.push(decoded_triangle),
@@ -232,7 +232,7 @@ impl Scene {
                                             indices_buffer, pos_raw_indices_data_pos, indices_stride, indices_raw_type.size()
                                         );
 
-                                        decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 0.0)))));
+                                        decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 1.0)))));
 
                                         match attribute.0 {
                                             gltf::Semantic::Positions => positions.push(decoded_triangle),
@@ -271,7 +271,7 @@ impl Scene {
                                             buffer, pos_raw_data_pos, stride, raw_type.size()
                                         );
 
-                                        decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 0.0)))));
+                                        decoded_triangle.iter_mut().for_each(|vec| *vec = Vec3A::from(new_matrix.mul_vec4(Vec4::from((*vec, 1.0)))));
 
                                         match attribute.0 {
                                             gltf::Semantic::Positions => positions.push(decoded_triangle),
@@ -497,22 +497,22 @@ impl Scene {
             UVMaterial{diffuse: DiffuseMaterial{}}
         );
         let diffuse_light_material1 = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(1.4, 0.1, 0.2)}
+            DiffuseLightMaterial{color: Vec3A::new(2.4, 0.1, 0.2)}
         );
         let diffuse_light_material2 = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(0.05, 1.3, 0.0)}
+            DiffuseLightMaterial{color: Vec3A::new(0.05, 2.3, 0.0)}
         );
         let diffuse_light_material3 = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(1.2, 1.2, 1.5)}
+            DiffuseLightMaterial{color: Vec3A::new(2.2, 2.2, 2.5)}
         );
         let diffuse_light_material4 = Arc::new(
-            DiffuseLightMaterial{color: Vec3A::new(0.1, 0.05, 1.5)}
+            DiffuseLightMaterial{color: Vec3A::new(0.1, 0.05, 2.5)}
         );
 
-        let sphere1 = Arc::new(Sphere::new(diffuse_light_material1.clone(), 0.2, Vec3A::new(-6.5, 0.5, -1.5)));
-        let sphere2 = Arc::new(Sphere::new(diffuse_light_material2.clone(), 0.2, Vec3A::new(-2.5, 2.0, 0.0)));
-        let sphere3 = Arc::new(Sphere::new(diffuse_light_material3.clone(), 0.2, Vec3A::new(-6.5, 0.5, 1.0)));
-        let sphere4 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.2, Vec3A::new(8.0, 1.5, -0.5)));
+        let sphere1 = Arc::new(Sphere::new(diffuse_light_material1.clone(), 0.3, Vec3A::new(-6.5, 0.5, -1.5)));
+        let sphere2 = Arc::new(Sphere::new(diffuse_light_material2.clone(), 0.3, Vec3A::new(-2.5, 2.0, 0.0)));
+        let sphere3 = Arc::new(Sphere::new(diffuse_light_material3.clone(), 0.3, Vec3A::new(-6.5, 0.5, 1.0)));
+        let sphere4 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.3, Vec3A::new(8.0, 1.5, -0.5)));
 
         self.lights.push(sphere1.clone());
         self.geometry.push(sphere1.clone());

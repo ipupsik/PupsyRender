@@ -40,7 +40,7 @@ fn refract(ray: &Ray, hit_result: &HitResult, ior: f32) -> Vec3A {
 }
 
 impl Material for RefractionMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Ray) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
         let direction = refract(ray, hit_result, ior).normalize();

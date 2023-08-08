@@ -12,7 +12,7 @@ pub struct DiffuseMaterial {
 }
 
 impl Material for DiffuseMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Ray) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
         ScatterResult{
             attenuation: Vec3A::ONE, 
             scatter: Some(Rc::new(CosinePDF::new(hit_result.normal))),

@@ -25,7 +25,7 @@ pub struct ScatterResult {
 }
 
 pub trait Material {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Ray) -> ScatterResult;
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult;
     fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32;
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A;
 }

@@ -19,7 +19,7 @@ pub fn random_in_unit_sphere() -> Vec3A {
     Vec3A::new(x, y, z)
 }
 
-pub fn random_cosine_direction() -> Vec3A {
+pub fn random_hemisphere_direction() -> Vec3A {
     let r1: f32 = rand::thread_rng().gen_range(0.0..1.0);
     let r2: f32 = rand::thread_rng().gen_range(0.0..1.0);
     let z = (1.0 - r2).sqrt();
@@ -29,6 +29,21 @@ pub fn random_cosine_direction() -> Vec3A {
     let y = phi.sin() * r2.sqrt();
 
     Vec3A::new(x, y, z)
+}
+
+pub fn random_ggx_hemisphere_direction(alpha: f32) -> Vec3A {
+    let r1: f32 = rand::thread_rng().gen_range(0.0..1.0);
+    let r2: f32 = rand::thread_rng().gen_range(0.0..1.0);
+
+    let phi = 2.0 * std::f32::consts::PI * r1;
+
+    let cos_thetha = ((1.0 - r2) / (1.0 + alpha * alpha * r2 - r2)).sqrt();
+    let sin_thetha = (1.0 - cos_thetha * cos_thetha).sqrt();
+
+    let x = phi.cos() * sin_thetha;
+    let y = phi.sin() * sin_thetha;
+
+    Vec3A::new(x, y, cos_thetha)
 }
 
 pub fn decode_triangle_vec3_indexed(
