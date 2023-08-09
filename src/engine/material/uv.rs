@@ -11,17 +11,13 @@ pub struct UVMaterial {
 }
 
 impl Material for UVMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
-        let mut scatter_result = self.diffuse.scatter(&ray, &hit_result, &light_scattering);
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
+        let mut scatter_result = self.diffuse.scatter(&ray, &hit_result);
 
         let sample = Vec3A::new(hit_result.uvs[0].x, hit_result.uvs[0].y, 1.0 - hit_result.uvs[0].x - hit_result.uvs[0].y);
         scatter_result.attenuation = sample;
 
         scatter_result
-    }
-
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        self.diffuse.scattering_pdf(&ray, hit_result, &scattering)
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

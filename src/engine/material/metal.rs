@@ -16,7 +16,7 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for MetalMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
         let direction = reflect(ray.direction, hit_result.normal) + (1.0 - self.metalness) * random_in_unit_sphere();
         
         ScatterResult{
@@ -25,10 +25,6 @@ impl Material for MetalMaterial {
             alpha_masked: false,
             hit_result: hit_result.clone()
         }
-    }
-
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        1.0
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

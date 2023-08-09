@@ -1,12 +1,15 @@
-use crate::engine::material::*;
+use crate::engine::{material::*, onb::ONB};
 
 use crate::engine::geometry::traceable::*;
 use crate::engine::math::ray::*;
+use crate::engine::math::utils::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::sampler::sampler::*;
 use crate::engine::material::pdf::cook_torrance_distribution::*;
 
 use glam::{Vec2, Vec3A, Vec4};
+
+use super::pdf::PDFBase;
 
 pub struct PBRMetallicRoughnessMaterial {
     pub base_color_factor: Vec4,
@@ -43,7 +46,7 @@ impl PBRMetallicRoughnessMaterial {
     }
 
     fn cook_torrance_ggx_specular(&self, normal: Vec3A, light: Vec3A, view: Vec3A, 
-        albedo: Vec3A, roughness: f32, metallic: f32) -> (Vec3A, Vec3A) {       
+        albedo: Vec3A, roughness: f32, metallic: f32) -> (Vec3A, Vec3A, f32) {       
         let light = light.normalize();
 
         let roughness_sqr = roughness * roughness;
@@ -52,11 +55,11 @@ impl PBRMetallicRoughnessMaterial {
 
         let normal_light_cos = normal.dot(light);
         if normal_light_cos <= 0.0 {
-            return (Vec3A::ZERO, Vec3A::ZERO);
+            return (Vec3A::ZERO, Vec3A::ZERO, 1.0);
         }
         let normal_view_cos = normal.dot(view);
         if normal_view_cos <= 0.0 {
-            return (Vec3A::ZERO, Vec3A::ZERO);
+            return (Vec3A::ZERO, Vec3A::ZERO, 1.0);
         }
         let normal_h_cos = normal.dot(H);
         let h_view_cos = H.dot(view);
@@ -69,9 +72,11 @@ impl PBRMetallicRoughnessMaterial {
         let D = Self::ggx_distribution(normal_h_cos, roughness_sqr);
         let F = Self::fresnel_schlick(f0, h_view_cos);
     
+        let pdf = D * normal_h_cos / (4.0 * h_view_cos); //и вычисление самой pdf
+
         let spec_k = G * F / (normal_view_cos * normal_h_cos);
 
-        return (F, spec_k.max(Vec3A::ZERO));
+        return (F, spec_k.max(Vec3A::ZERO), pdf);
     }
 
     pub fn new() -> Self {
@@ -94,13 +99,29 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMetallicRoughnessMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
         let mut albedo = Vec4::ONE;
         albedo *= self.base_color_factor;
         albedo = albedo * self.base_color_texture.sample(
             &self.base_color_texture_sampler, 
             self.base_color_texture.texture.get_uv_by_index(&hit_result.uvs)
         );
+
+        let mut normal = hit_result.normal;
+
+        if self.normal_texture.valid() {
+            let mut normal_map = Vec3A::from(self.normal_texture.sample(
+                &self.normal_texture_sampler, 
+                self.normal_texture.texture.get_uv_by_index(&hit_result.uvs)
+            ));
+            normal_map = normal_map * 2.0 - Vec3A::ONE;
+
+            /*normal = normal + 
+                hit_result.tangent * normal_map.x + 
+                hit_result.binormal * normal_map.y;
+
+            normal = normal.normalize();*/
+        }  
 
         let metallic_roughness = self.metalic_roughness_texture.sample(
             &self.metalic_roughness_texture_sampler, 
@@ -110,39 +131,28 @@ impl Material for PBRMetallicRoughnessMaterial {
         let roughness = metallic_roughness.y * self.roughness_factor;
         let metallic = metallic_roughness.x * self.metalic_factor;
 
-        let scatter = Rc::new(
-            CookTorranceDistributionPDF::new(hit_result.normal, roughness)
-        );
+        let mut scatter_pdf = CookTorranceDistributionPDF::new(normal);
 
-        let mut scatter_result = ScatterResult{
-            attenuation: Vec3A::ONE, 
-            scatter: Some(scatter.clone()),
-            alpha_masked: false,
-            hit_result: hit_result.clone()
-        };
+        scatter_pdf.generated_direction = scatter_pdf.base_pdf.basis.get_position(
+            random_ggx_hemisphere_direction(roughness * roughness)
+        ).normalize();
 
-        if self.normal_texture.valid() {
-            let mut normal_map = Vec3A::from(self.normal_texture.sample(
-                &self.normal_texture_sampler, 
-                self.normal_texture.texture.get_uv_by_index(&hit_result.uvs)
-            ));
-            normal_map = normal_map * 2.0 - Vec3A::ONE;
+        let light = scatter_pdf.generated_direction;
 
-            /*scatter_result.hit_result.normal = scatter_result.hit_result.normal + 
-                scatter_result.hit_result.tangent * normal_map.x + 
-                scatter_result.hit_result.binormal * normal_map.y;
-
-            scatter_result.hit_result.normal = scatter_result.hit_result.normal.normalize();
-            */
-        }  
-
-        let light = if light_scattering.is_some() {light_scattering.unwrap().direction} else {scatter.generate()};
-
-        let (fresnel, specular) = self.cook_torrance_ggx_specular(scatter_result.hit_result.normal, 
+        let (fresnel, specular, pdf) = self.cook_torrance_ggx_specular(normal, 
             light, -ray.direction, Vec3A::from(albedo),
             roughness, metallic);
 
+        scatter_pdf.pdf = pdf;
+
         let mut sample = Vec3A::from(albedo) * (1.0 - fresnel) + specular;
+
+        let mut scatter_result = ScatterResult{
+            attenuation: Vec3A::ONE, 
+            scatter: Some(Rc::new(scatter_pdf)),
+            alpha_masked: false,
+            hit_result: hit_result.clone()
+        };
 
         if albedo.w < 0.99 {
             sample = Vec3A::ONE;
@@ -152,12 +162,6 @@ impl Material for PBRMetallicRoughnessMaterial {
         scatter_result.attenuation = sample;
 
         return scatter_result;
-    }
-
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        let cosine = hit_result.normal.dot(scattering.direction);
-        let scattered_pdf =  if cosine < 0.0 {0.0} else {cosine / std::f32::consts::PI};
-        scattered_pdf
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

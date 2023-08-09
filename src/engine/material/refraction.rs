@@ -40,7 +40,7 @@ fn refract(ray: &Ray, hit_result: &HitResult, ior: f32) -> Vec3A {
 }
 
 impl Material for RefractionMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
         let ior = ior(self.refraction_type, hit_result.front_face);
 
         let direction = refract(ray, hit_result, ior).normalize();
@@ -51,10 +51,6 @@ impl Material for RefractionMaterial {
             alpha_masked: false,
             hit_result: hit_result.clone()
         }
-    }
-
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        1.0
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

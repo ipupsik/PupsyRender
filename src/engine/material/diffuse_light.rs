@@ -13,17 +13,13 @@ pub struct DiffuseLightMaterial {
 }
 
 impl Material for DiffuseLightMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
         ScatterResult{
             attenuation: Vec3A::ONE, 
             scatter: None,
             alpha_masked: false,
             hit_result: hit_result.clone()
         }
-    }
-
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        1.0
     }
 
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {

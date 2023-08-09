@@ -53,8 +53,6 @@ impl Renderer {
 
             let hit_result = &hit_result_option.unwrap();
 
-            let mut light_scatter = Vec3A::ZERO;
-
             let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
             let mut weights = Vec::new();
 
@@ -69,11 +67,7 @@ impl Renderer {
                 pdfs: pdfs,
                 weights: weights});
 
-            light_scatter = light_pdf.generate();
-
-            let light = if lights.len() > 0 {Some(Ray{origin : hit_result.position, direction : light_scatter})} else {None};
-
-            let scatter_result = traceable.material().scatter(&ray, &hit_result, &light);
+            let scatter_result = traceable.material().scatter(&ray, &hit_result);
 
             let emmission = traceable.material().emit(&ray, &scatter_result.hit_result);
             let mut sample = scatter_result.attenuation;
@@ -98,15 +92,13 @@ impl Renderer {
                 }
 
                 let mut scattering_ray = Ray{origin : scatter_result.hit_result.position, direction : scatter};
-                let mut scattering_pdf_value = traceable.material().scattering_pdf(&ray, &scatter_result.hit_result, &scattering_ray);
 
                 if scatter_result.alpha_masked {
                     scattering_ray = Ray{origin : scatter_result.hit_result.position, direction : ray.direction};
-                    scattering_pdf_value = 1.0;
                     pdf_value = 1.0;
                 }
 
-                sample = sample * scattering_pdf_value / pdf_value;
+                sample = sample / pdf_value;
 
                 ray = scattering_ray;
             } else {

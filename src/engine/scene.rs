@@ -477,6 +477,25 @@ impl Scene {
             }
         }
 
+        let lights_option = gltf.lights();
+
+        if lights_option.is_some() {
+            let lights = lights_option.unwrap();
+            for light in lights {
+                match light.kind() {
+                    gltf::khr_lights_punctual::Kind::Directional => {
+
+                    },
+                    gltf::khr_lights_punctual::Kind::Spot { inner_cone_angle, outer_cone_angle } => {
+
+                    },
+                    gltf::khr_lights_punctual::Kind::Point => {
+                        
+                    }
+                }
+            }
+        }
+
         for scene in gltf.scenes() {
             for node in scene.nodes() {
                 self.load_gltf_node(&mut context, &node, &Mat4::IDENTITY);

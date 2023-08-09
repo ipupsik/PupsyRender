@@ -38,18 +38,14 @@ pub fn reflect(eye: Vec3A, normal: Vec3A) -> Vec3A {
 }
 
 impl Material for PBRMaterial {
-    fn scatter(&self, ray: &Ray, hit_result : &HitResult, light_scattering: &Option<Ray>) -> ScatterResult {
-        self.pbr_metallic_roughness.scatter(&ray, &hit_result, &light_scattering)
+    fn scatter(&self, ray: &Ray, hit_result : &HitResult) -> ScatterResult {
+        self.pbr_metallic_roughness.scatter(&ray, &hit_result)
     }
-
-    fn scattering_pdf(&self, ray: &Ray, hit_result : &HitResult, scattering: &Ray) -> f32 {
-        self.pbr_metallic_roughness.scattering_pdf(&ray, hit_result, &scattering)
-    }
-
+    
     fn emit(&self, ray: &Ray, hit_result : &HitResult) -> Vec3A {
         Vec3A::from(self.emissive_texture.sample(
             &self.emissive_texture_sampler, 
             self.emissive_texture.texture.get_uv_by_index(&hit_result.uvs)
-        ))
+        )) * self.emissive_factor
     }
 }

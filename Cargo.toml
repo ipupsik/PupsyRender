@@ -14,4 +14,4 @@ num_cpus = "1.16.0"
 
 [dependencies.gltf]
 version = "1.2"
-features = ["extras", "names"]
+features = ["extras", "names", "KHR_lights_punctual"]
