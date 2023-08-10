@@ -15,7 +15,7 @@ use crate::engine::geometry::traceable::*;
 
 use std::{sync::{Arc}, rc::Rc};
 
-use self::pdf::PDF;
+use self::{pdf::PDF, diffuse::DiffuseMaterial};
 
 pub struct ScatterResult {
     pub attenuation: Vec3A,

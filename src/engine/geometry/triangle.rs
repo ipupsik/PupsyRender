@@ -12,6 +12,7 @@ pub struct Triangle {
     pub aabb: AABB,
 
     pub vertices: [Vertex; 3],
+    pub centroid: Vec3A,
 }
 
 impl Triangle {
@@ -23,19 +24,21 @@ impl Triangle {
         let aabb = AABB::new(
             v1.position.min(v2.position.min(v3.position)),
             v1.position.max(v2.position.max(v3.position)),
-            material.clone()
         );
+
+        let centroid = (v1.position + v2.position + v3.position) / 3.0;
 
         Self {
             material: material.clone(),
             vertices : [v1, v2, v3],
-            aabb: aabb
+            aabb: aabb,
+            centroid: centroid,
         }
     }
 }
 
-impl Mesh for Triangle {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Mesh) {
+impl Traceable for Triangle {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Traceable) {
         let v0v1 = self.vertices[1].position - self.vertices[0].position;
         let v0v2 = self.vertices[2].position - self.vertices[0].position;
         let pvec = ray.direction.cross(v0v2);
@@ -89,8 +92,8 @@ impl Mesh for Triangle {
     }
 
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
-        let (hit_result_option, traceable) = self.hit(ray, t_min, t_max);
-        if (!hit_result_option.is_some()) {
+        let (hit_result_option, _) = self.hit(ray, t_min, t_max);
+        if !hit_result_option.is_some() {
             return 0.0;
         }
         let hit_result = hit_result_option.unwrap();
@@ -115,7 +118,11 @@ impl Mesh for Triangle {
         return &self.aabb;
     }
 
+    fn centroid(&self) -> Vec3A {
+        return self.centroid;
+    }
+
     fn material(&self) -> &Arc<dyn Material> {
-        return &self.material;
+        &self.material
     }
 }

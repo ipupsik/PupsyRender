@@ -23,7 +23,7 @@ impl CookTorranceDistributionPDF {
 
 impl PDF for CookTorranceDistributionPDF {
     fn value(&self, direction: Vec3A) -> f32 {
-        self.pdf
+        1.0
     }
 
     fn generate(&self) -> Vec3A {

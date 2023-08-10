@@ -13,14 +13,16 @@ use crate::engine::material::uv::*;
 use crate::engine::texture::texture2d::*;
 use crate::engine::texture::*;
 use crate::engine::geometry::bvh::node::*;
+use crate::engine::geometry::bvh::bvh::*;
 use crate::engine::geometry::sphere::*;
 use crate::engine::math::utils::*;
 use crate::engine::camera::*;
 
 use super::geometry::sphere;
-use super::geometry::traceable::Mesh;
+use super::geometry::traceable::*;
 use super::geometry::triangle::*;
 use super::geometry::vertex::Vertex;
+use super::light::directional::DirectionalLight;
 
 use std::io::Cursor;
 use image::io::Reader as ImageReader;
@@ -33,15 +35,16 @@ use std::io;
 use std::fs;
 
 pub struct Scene {
-    pub geometry: Vec<Arc<dyn Mesh>>,
-    pub lights: Vec<Arc<dyn Mesh>>,
+    pub geometry: Vec<Arc<dyn Traceable>>,
+    pub lights: Vec<Arc<dyn Traceable>>,
 
     pub materials: Vec<Arc<dyn Material>>,
-    pub dummy_material: Arc<dyn Material>,
 
     pub textures: Vec<Arc<Texture>>,
-    pub bvh: Node,
-    pub cameras: Vec<Arc<PerspectiveCamera>>
+    pub bvh: BVH,
+    pub cameras: Vec<Arc<PerspectiveCamera>>,
+
+    pub directional_lights: Vec<DirectionalLight>,
 }
 
 struct GLTFContext {
@@ -60,20 +63,19 @@ impl GLTFContext {
 
 impl Scene {
     pub fn new() -> Self {
-        let dummy_material: Arc<dyn Material> = Arc::new(DiffuseMaterial{});
         Self { 
-            bvh: Node::new(&Vec::new(), 0, 0, &dummy_material),
+            bvh: BVH::new(Arc::new(Vec::new())),
             geometry : Vec::new(),
             lights: Vec::new(),
             materials : Vec::new(),
-            dummy_material: dummy_material,
             textures : Vec::new(),
             cameras: Vec::new(),
+            directional_lights: Vec::new(),
         }
     }
 
     pub fn build_bvh(&mut self) {
-        self.bvh = Node::new(&self.geometry, 0, self.geometry.len(), &self.dummy_material);
+        self.bvh = BVH::new(Arc::new(self.geometry.clone()));
     }
 
     fn load_gltf_material(&mut self, context : &mut GLTFContext, material: &gltf::material::Material) -> Arc<dyn Material> {
@@ -304,12 +306,15 @@ impl Scene {
 
                 let material = self.load_gltf_material(context, &primitive.material());
 
-                for (index, normal) in normals.iter().enumerate() {
-                    let delta_pos1 = positions[index][1] - positions[index][0];
-                    let delta_pos2 = positions[index][2] - positions[index][0];
+                for (i, normal) in normals.iter_mut().enumerate() {
+                    let triangle_normal = (positions[i][0] - positions[i][1]).cross(positions[i][0] - positions[i][2]).normalize();
+                    *normal = [triangle_normal, triangle_normal, triangle_normal];
 
-                    let delta_uv1 = uvs[index][1] - uvs[index][0];
-                    let delta_uv2 = uvs[index][2] - uvs[index][0];
+                    let delta_pos1 = positions[i][1] - positions[i][0];
+                    let delta_pos2 = positions[i][2] - positions[i][0];
+
+                    let delta_uv1 = uvs[i][1] - uvs[i][0];
+                    let delta_uv2 = uvs[i][2] - uvs[i][0];
 
                     let r = 1.0 / (delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x);
 
@@ -336,7 +341,7 @@ impl Scene {
                 assert!(normals.len() == 0||  uvs.len() % normals.len() == 0);
                 let triangles_count = positions.len();
 
-                let mut mesh_triangles: Vec<Arc<Box<dyn Mesh>>> = Vec::new();
+                let mut mesh_triangles: Vec<Arc<Box<dyn Traceable>>> = Vec::new();
                 mesh_triangles.reserve(triangles_count);
 
                 for i in 0..triangles_count {
@@ -362,6 +367,32 @@ impl Scene {
                 }
 
                 self.materials.push(material);
+            }
+        }
+
+        let light_option = node.light();
+
+        if light_option.is_some() {
+            let light = light_option.unwrap();
+
+            let intensity = light.intensity();
+            let color = light.color();
+
+            match light.kind() {
+                gltf::khr_lights_punctual::Kind::Directional => {
+                    let light_vector = Vec3A::from(new_matrix.mul_vec4(Vec4::new(0.0, 0.0, -1.0, 0.0))).normalize();
+                    self.directional_lights.push(DirectionalLight::new(
+                        Vec3A::from(color),
+                        intensity / 683.0,
+                        light_vector
+                    ));
+                },
+                gltf::khr_lights_punctual::Kind::Spot { inner_cone_angle, outer_cone_angle } => {
+
+                },
+                gltf::khr_lights_punctual::Kind::Point => {
+
+                }
             }
         }
 
@@ -477,25 +508,6 @@ impl Scene {
             }
         }
 
-        let lights_option = gltf.lights();
-
-        if lights_option.is_some() {
-            let lights = lights_option.unwrap();
-            for light in lights {
-                match light.kind() {
-                    gltf::khr_lights_punctual::Kind::Directional => {
-
-                    },
-                    gltf::khr_lights_punctual::Kind::Spot { inner_cone_angle, outer_cone_angle } => {
-
-                    },
-                    gltf::khr_lights_punctual::Kind::Point => {
-                        
-                    }
-                }
-            }
-        }
-
         for scene in gltf.scenes() {
             for node in scene.nodes() {
                 self.load_gltf_node(&mut context, &node, &Mat4::IDENTITY);
@@ -532,15 +544,17 @@ impl Scene {
         let sphere2 = Arc::new(Sphere::new(diffuse_light_material2.clone(), 0.3, Vec3A::new(-2.5, 2.0, 0.0)));
         let sphere3 = Arc::new(Sphere::new(diffuse_light_material3.clone(), 0.3, Vec3A::new(-6.5, 0.5, 1.0)));
         let sphere4 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.3, Vec3A::new(8.0, 1.5, -0.5)));
+        let sphere5 = Arc::new(Sphere::new(diffuse_light_material4.clone(), 0.3, Vec3A::new(0.0, 0.0, 0.0)));
 
-        self.lights.push(sphere1.clone());
-        self.geometry.push(sphere1.clone());
-        self.lights.push(sphere2.clone());
-        self.geometry.push(sphere2.clone());
-        self.lights.push(sphere3.clone());
-        self.geometry.push(sphere3.clone());
-        self.lights.push(sphere4.clone());
-        self.geometry.push(sphere4.clone());
+        //self.lights.push(sphere1.clone());
+        //self.geometry.push(sphere1.clone());
+        //self.geometry.push(sphere5.clone());
+        //self.lights.push(sphere2.clone());
+        //self.geometry.push(sphere2.clone());
+        //self.lights.push(sphere3.clone());
+        //self.geometry.push(sphere3.clone());
+        //self.lights.push(sphere4.clone());
+        //self.geometry.push(sphere4.clone());
         //self.geometry.push(Arc::new(Sphere{material: diffuse_material.clone(), radius : 100.0, position : Vec3A::new(0.0, -101.0, 1.0)}));
         //self.geometry.push(Arc::new(Sphere{material: metal_material.clone(), radius : 0.5, position : Vec3A::new(1.0, 0.0, 1.2)}));
         //self.geometry.push(Arc::new(Sphere{material: normal_material.clone(), radius : 0.5, position : Vec3A::new(-1.0, 0.0, 1.2)}));

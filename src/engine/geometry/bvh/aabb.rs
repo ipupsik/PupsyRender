@@ -6,19 +6,17 @@ use glam::{Vec3A};
 use std::sync::*;
 use std::cmp::Ordering;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct AABB {
     pub min: Vec3A,
     pub max: Vec3A,
-    pub dummy_material: Arc<dyn Material>
 }
 
 impl AABB {
-    pub fn new(min: Vec3A, max: Vec3A, dummy_material: Arc<dyn Material>) -> Self {
+    pub fn new(min: Vec3A, max: Vec3A) -> Self {
         Self {
             min: min, 
             max: max,
-            dummy_material: dummy_material.clone()
         }
     }
 
@@ -26,27 +24,25 @@ impl AABB {
         AABB::new(
             self.min.min(other_aabb.min),
             self.max.max(other_aabb.max),
-            self.dummy_material.clone()
         )
     }
 
+    pub fn area(&self) -> f32 {
+        let extent = self.max - self.min;
+        return extent.x * extent.y + extent.x * extent.z + extent.y * extent.z;
+    }
+
     pub fn cmp<'a>(
-        a: &'a Arc<dyn Mesh>,
-        b: &'a Arc<dyn Mesh>,
+        a: &'a Arc<dyn Traceable>,
+        b: &'a Arc<dyn Traceable>,
         axis: usize,
     ) -> Ordering {
-        // TODO: Code works faster with invalid sorting?
-        let mut box_a = AABB::new(Vec3A::ZERO, Vec3A::ZERO, Arc::new(DiffuseMaterial{}));
-        let mut box_b = AABB::new(Vec3A::ZERO, Vec3A::ZERO, Arc::new(DiffuseMaterial{}));
-
-        let a = box_a.min[axis];
-        let b = box_b.min[axis];
+        let a = a.bounding_box().min[axis];
+        let b = b.bounding_box().min[axis];
         a.partial_cmp(&b).unwrap()
     }
-}
 
-impl Mesh for AABB {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Mesh) {
+    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
         let aabb_t_min = (self.min - ray.origin) / ray.direction;
         let aabb_t_max = (self.max - ray.origin) / ray.direction;
         let t1 = aabb_t_min.min(aabb_t_max);
@@ -55,32 +51,8 @@ impl Mesh for AABB {
         let t_far = t2.min_element().min(t_max);
 
         if t_near <= t_far && t_far >= 0.0 {
-            return (Some(HitResult{
-                position : Vec3A::ZERO, 
-                t : 0.0, 
-                normal : Vec3A::ZERO, 
-                binormal : Vec3A::ZERO, 
-                tangent : Vec3A::ZERO, 
-                uvs: Vec::new(), 
-                front_face: false
-            }), self);
+            return Some(t_near);
         }
-        return (None, self);
-    }
-
-    fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
-        0.0
-    }
-
-    fn random(&self) -> Vec3A {
-        Vec3A::ZERO
-    }
-
-    fn bounding_box(&self) -> &AABB {
-        self
-    }
-
-    fn material(&self) -> &Arc<dyn Material> {
-        return &self.dummy_material;
+        return None;
     }
 }

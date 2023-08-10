@@ -6,11 +6,12 @@ use std::sync::*;
 use super::bvh::aabb::*;
 use glam::{Vec3A};
 
-pub trait Mesh {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Mesh);
+pub trait Traceable {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Traceable);
     fn pdf(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32;
     fn random(&self) -> Vec3A;
     fn bounding_box(&self) -> &AABB;
+    fn centroid(&self) -> Vec3A;
 
     fn material(&self) -> &Arc<dyn Material>;
 }

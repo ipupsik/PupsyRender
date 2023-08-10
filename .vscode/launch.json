@@ -36,7 +36,7 @@
                 }
             },
             "args": [
-                "--in", "example/example4.gltf",
+                "--in", "example/example3.gltf",
                 "--spp", "100",
                 "--depth", "100"
             ],

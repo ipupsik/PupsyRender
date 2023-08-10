@@ -21,7 +21,6 @@ impl Sphere {
         let aabb = AABB::new(
             position - Vec3A::new(radius, radius, radius),
             position + Vec3A::new(radius, radius, radius),
-            material.clone()
         );
 
         Self {
@@ -33,8 +32,8 @@ impl Sphere {
     }
 }
 
-impl Mesh for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Mesh) {
+impl Traceable for Sphere {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Traceable) {
         let oc: Vec3A = ray.origin - self.position;
         let a: f32 = ray.direction.dot(ray.direction);
         let half_b: f32 = oc.dot(ray.direction);
@@ -91,7 +90,11 @@ impl Mesh for Sphere {
         &self.aabb
     }
 
+    fn centroid(&self) -> Vec3A {
+        self.position
+    }
+
     fn material(&self) -> &Arc<dyn Material> {
-        return &self.material;
+        &self.material
     }
 }

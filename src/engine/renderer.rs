@@ -1,7 +1,7 @@
 use crate::engine::camera::*;
 use crate::engine::render_context::*;
 use crate::engine::math::ray::*;
-use crate::engine::scene;
+use crate::engine::scene::*;
 use glam::{Vec3A};
 use gltf::mesh::util::weights;
 use crate::engine::geometry::bvh::node::*;
@@ -13,7 +13,7 @@ use std::rc::Rc;
 use std::sync::{Arc};
 use image::{Rgb};
 
-use super::geometry::traceable::Mesh;
+use super::geometry::traceable::Traceable;
 use super::material::pdf::PDF;
 use super::material::pdf::mix::MixPDF;
 use super::material::pdf::traceable::GeometryPDF;
@@ -39,16 +39,17 @@ impl Renderer {
        input / (Vec3A::ONE + input)
     }
 
-    fn sample_scene(ray : &Ray, bvh : &Node, lights: &Vec<Arc<dyn Mesh>>, depth : u32) -> Vec3A {
+    fn sample_scene(ray : &Ray, scene: &Scene, depth : u32) -> Vec3A {
         let mut ray = ray.clone();
         let mut average_sample = Vec3A::ONE;
-        for i in 0..depth {
-            let (hit_result_option, traceable) = bvh.hit(&ray, 0.001, f32::MAX);
+        for _ in 0..depth {
+            let (hit_result_option, traceable) = scene.bvh.hit(&ray, 0.001, f32::MAX);
 
             if !hit_result_option.is_some() {
                 let t = 0.5 * (ray.direction.y + 1.0);
                 let sky = (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
-                return average_sample * sky;
+
+                return average_sample * (sky);
             }
 
             let hit_result = &hit_result_option.unwrap();
@@ -56,9 +57,9 @@ impl Renderer {
             let mut pdfs: Vec<Rc::<dyn PDF>> = Vec::new();
             let mut weights = Vec::new();
 
-            let uniform_weight = 1.0 / lights.len() as f32;
+            let uniform_weight = 1.0 / scene.lights.len() as f32;
 
-            for light in lights {
+            for light in scene.lights.iter() {
                 pdfs.push(Rc::new(GeometryPDF{origin: hit_result.position, geometry: light.clone()}));
                 weights.push(uniform_weight);
             }
@@ -78,7 +79,7 @@ impl Renderer {
                 let mut scatter = Vec3A::ZERO;
                 let mut pdf_value = 0.0;
 
-                if lights.len() > 0 {
+                if scene.lights.len() > 0 {
                     let final_pdf = MixPDF{ 
                         pdfs: vec![pdf.clone(), light_pdf.clone()],
                         weights: vec![0.5, 0.5]};
@@ -166,7 +167,7 @@ impl Renderer {
                             let ray = camera.get_ray(u, 1.0 - v);
             
                             let mut current_sample = Self::sample_scene(&ray, 
-                                &render_context.scene.bvh, &render_context.scene.lights, render_context.max_depth);
+                                &render_context.scene, render_context.max_depth);
         
                             if current_sample.x.is_nan() {
                                 current_sample.x = 1.0;

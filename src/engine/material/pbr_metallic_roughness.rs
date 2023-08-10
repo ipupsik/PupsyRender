@@ -69,14 +69,11 @@ impl PBRMetallicRoughnessMaterial {
 
         let G = Self::ggx_partial_geometry(normal_view_cos, roughness_sqr) *
             Self::ggx_partial_geometry(normal_light_cos, roughness_sqr);
-        let D = Self::ggx_distribution(normal_h_cos, roughness_sqr);
         let F = Self::fresnel_schlick(f0, h_view_cos);
     
-        let pdf = D * normal_h_cos / (4.0 * h_view_cos); //и вычисление самой pdf
-
         let spec_k = G * F / (normal_view_cos * normal_h_cos);
 
-        return (F, spec_k.max(Vec3A::ZERO), pdf);
+        return (F, spec_k.max(Vec3A::ZERO), 1.0);
     }
 
     pub fn new() -> Self {
@@ -116,11 +113,11 @@ impl Material for PBRMetallicRoughnessMaterial {
             ));
             normal_map = normal_map * 2.0 - Vec3A::ONE;
 
-            /*normal = normal + 
+            normal = normal + 
                 hit_result.tangent * normal_map.x + 
                 hit_result.binormal * normal_map.y;
 
-            normal = normal.normalize();*/
+            normal = normal.normalize();
         }  
 
         let metallic_roughness = self.metalic_roughness_texture.sample(
