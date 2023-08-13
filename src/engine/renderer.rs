@@ -17,6 +17,8 @@ use super::geometry::traceable::Traceable;
 use super::material::pdf::PDF;
 use super::material::pdf::mix::MixPDF;
 use super::material::pdf::traceable::GeometryPDF;
+use super::profile::Profile;
+use super::profile::ProfileType;
 
 use std::thread::{self};
 use std::sync::*;
@@ -42,6 +44,7 @@ impl Renderer {
     fn sample_scene(ray : &Ray, scene: &Scene, depth : u32) -> Vec3A {
         let mut ray = ray.clone();
         let mut average_sample = Vec3A::ONE;
+
         for _ in 0..depth {
             let (hit_result_option, traceable) = scene.bvh.hit(&ray, 0.001, f32::MAX);
 
@@ -154,6 +157,8 @@ impl Renderer {
             let tx =  tx.clone();
             threads.push(
                 thread::spawn(move || {
+                    let sample_scene_profile = Profile::new(format!("Thread#{} sample scene", thr).as_str(), ProfileType::INSTANT);
+
                     let mut frame_buffer_slice = vec![Vec3A::ZERO; index_end - index_begin];
                     for sample_index in 0..render_context.spp {
                         for i in 0..index_end - index_begin
@@ -183,6 +188,8 @@ impl Renderer {
                         }
                         tx.send((frame_buffer_slice.clone(), thr, sample_index)).unwrap();
                     }
+
+                    drop(sample_scene_profile);
                 })
             );
         }

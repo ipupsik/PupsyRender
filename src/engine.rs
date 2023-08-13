@@ -10,3 +10,4 @@ pub mod sampler;
 pub mod onb;
 pub mod transform;
 pub mod light;
+pub mod profile;

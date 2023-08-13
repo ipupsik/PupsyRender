@@ -23,6 +23,7 @@ use super::geometry::traceable::*;
 use super::geometry::triangle::*;
 use super::geometry::vertex::Vertex;
 use super::light::directional::DirectionalLight;
+use super::profile::*;
 
 use std::io::Cursor;
 use image::io::Reader as ImageReader;
@@ -75,7 +76,9 @@ impl Scene {
     }
 
     pub fn build_bvh(&mut self) {
+        let bvh_construct_profile = Profile::new("BVH construct", ProfileType::INSTANT);
         self.bvh = BVH::new(Arc::new(self.geometry.clone()));
+        drop(bvh_construct_profile);
     }
 
     fn load_gltf_material(&mut self, context : &mut GLTFContext, material: &gltf::material::Material) -> Arc<dyn Material> {
@@ -440,6 +443,8 @@ impl Scene {
     }
 
     pub fn load_gltf(&mut self, path: &str) {
+        let load_gltf_profile = Profile::new(format!("Load gltf file, {}", path).as_str(), ProfileType::INSTANT);
+
         let file = fs::File::open(path).expect(format!("Invalid filename: {}", path).as_str());
         let reader = io::BufReader::new(file);
         let gltf = gltf::Gltf::from_reader(reader).unwrap();
@@ -513,6 +518,8 @@ impl Scene {
                 self.load_gltf_node(&mut context, &node, &Mat4::IDENTITY);
             }
         }
+
+        drop(load_gltf_profile);
     }
 
     pub fn load_debug(&mut self) {
