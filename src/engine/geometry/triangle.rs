@@ -115,11 +115,11 @@ impl Traceable for Triangle {
     }
 
     fn bounding_box(&self) -> &AABB {
-        return &self.aabb;
+        &self.aabb
     }
 
-    fn centroid(&self) -> Vec3A {
-        return self.centroid;
+    fn centroid(&self) -> &Vec3A {
+        &self.centroid
     }
 
     fn material(&self) -> &Arc<dyn Material> {

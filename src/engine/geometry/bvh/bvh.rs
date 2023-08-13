@@ -75,25 +75,22 @@ impl BVH {
 
 
         // Split primitive array into two parts
-        let mut i = self.nodes[node_index].left_node_or_primitive_index;
-        let mut j = i + self.nodes[node_index].primitives_count - 1;
+        let mut i = self.nodes[node_index].left_node_or_primitive_index as i32;
+        let mut j = (i + self.nodes[node_index].primitives_count as i32 - 1) as i32;
         while i <= j {
-            if self.primitives[self.primitive_indices[i]].centroid()[axis] < split {
+            if self.primitives[self.primitive_indices[i as usize]].centroid()[axis] < split {
                 i += 1;
-            }
-            else {
+            } else {
                 // swap i and j primitives
-                if j > 0 {
-                    let t = self.primitive_indices[i];
-                    self.primitive_indices[i] = self.primitive_indices[j];
-                    self.primitive_indices[j] = t;
-                    j -= 1;
-                }
+                let t = self.primitive_indices[i as usize];
+                self.primitive_indices[i as usize] = self.primitive_indices[j as usize];
+                self.primitive_indices[j as usize] = t;
+                j -= 1;
             }
         }
 
-        let left_primitive_count = i - self.nodes[node_index].left_node_or_primitive_index;
-        if left_primitive_count == 0 || left_primitive_count == self.nodes[node_index].primitives_count {
+        let left_primitive_count = i - self.nodes[node_index].left_node_or_primitive_index as i32;
+        if left_primitive_count <= 0 || left_primitive_count >= self.nodes[node_index].primitives_count as i32 {
             return;
         }
 
@@ -102,10 +99,10 @@ impl BVH {
         self.nodes_used += 2;
 
         self.nodes[left_child_index].left_node_or_primitive_index = self.nodes[node_index].left_node_or_primitive_index;
-        self.nodes[left_child_index].primitives_count = left_primitive_count;
+        self.nodes[left_child_index].primitives_count = left_primitive_count as usize;
 
-        self.nodes[right_child_index].left_node_or_primitive_index = i;
-        self.nodes[right_child_index].primitives_count = self.nodes[node_index].primitives_count - left_primitive_count;
+        self.nodes[right_child_index].left_node_or_primitive_index = i as usize;
+        self.nodes[right_child_index].primitives_count = self.nodes[node_index].primitives_count - left_primitive_count as usize;
 
         self.nodes[node_index].left_node_or_primitive_index = left_child_index;
         self.nodes[node_index].primitives_count = 0;
@@ -123,13 +120,11 @@ impl BVH {
         let mut best_pos = 0.0;
         let mut best_cost = f32::MAX;
 
-        for axis in 0..3 
-        {
+        for axis in 0..3 {
             let mut min = node.aabb.min[axis];
             let mut max = node.aabb.max[axis];
 
-            for i in 0..node.primitives_count
-            {
+            for i in 0..node.primitives_count {
                 let primitive_index = node.left_node_or_primitive_index + i;
                 let primitive = &self.primitives[self.primitive_indices[primitive_index]];
 
@@ -141,8 +136,7 @@ impl BVH {
             let mut bins = [Bin::new(); BINS];
             let scale = (max - min) / BINS as f32;
 
-            for i in 0..node.primitives_count
-            {
+            for i in 0..node.primitives_count {
                 let primitive_index = node.left_node_or_primitive_index + i;
                 let primitive = &self.primitives[self.primitive_indices[primitive_index]];
 
@@ -163,21 +157,20 @@ impl BVH {
             let mut right_aabb = AABB::new(Vec3A::MAX, Vec3A::MIN);
             let mut left_count = 0;
             let mut right_count = 0;
-            for i in 0..BINS - 1
-            {
+            for i in 0..BINS - 1 {
                 left_count += bins[i].primitive_count;
                 left_aabb = left_aabb.extend(&bins[i].aabb);
                 left_primitives[i] = left_count;
                 left_area[i] = left_aabb.area();
 
-                right_count += bins[BINS - 2 - i].primitive_count;
-                right_aabb = right_aabb.extend(&bins[BINS - 2 - i].aabb);
+                right_count += bins[BINS - 1 - i].primitive_count;
+                right_aabb = right_aabb.extend(&bins[BINS - 1 - i].aabb);
                 right_primitives[BINS - 2 - i] = right_count;
                 right_area[BINS - 2 - i] = right_aabb.area();
             }
 
             for i in 0..BINS - 1 {
-                let candidate_pos = min + scale * i as f32;
+                let candidate_pos = min + scale * (i + 1) as f32;
                 let cost = left_primitives[i] as f32 * left_area[i] +
                     right_primitives[i] as f32 * right_area[i];
                 if cost < best_cost {
@@ -191,19 +184,18 @@ impl BVH {
         (best_axis, best_pos, best_cost)
     }
 
-    fn calculate_node_cost(node: &Node) -> f32
-    {
+    fn calculate_node_cost(node: &Node) -> f32 {
         return node.primitives_count as f32 * node.aabb.area();
     }
 
     pub fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, node_index: usize) -> (Option<HitResult>, &dyn Traceable) {
-        let mut stack: [*const Node; 64] = [std::ptr::null(); 64];
+        let mut stack: [*const Node; 256] = [std::ptr::null(); 256];
         let mut node: *const Node = &self.nodes[node_index];
         let mut stack_ptr = 0;
 
         let mut min_hit_result = HitResult{
             position : Vec3A::ZERO, 
-            t : f32::MAX, 
+            t : t_max, 
             normal : Vec3A::ZERO, 
             binormal : Vec3A::ZERO, 
             tangent : Vec3A::ZERO, 
@@ -217,7 +209,7 @@ impl BVH {
                 if (*node).is_leaf() {
                     for i in 0..(*node).primitives_count {
                         let primitive_index = (*node).left_node_or_primitive_index + i;
-                        let (hit_result_option, _) = self.primitive(primitive_index).hit(ray, t_min, t_max);
+                        let (hit_result_option, _) = self.primitive(primitive_index).hit(ray, t_min, min_hit_result.t);
                         if hit_result_option.is_some() {
                             let hit_result = hit_result_option.unwrap();
                             if hit_result.t < min_hit_result.t {
@@ -237,33 +229,43 @@ impl BVH {
                     let left_node = &self.nodes[(*node).left_node_or_primitive_index];
                     let right_node = &self.nodes[(*node).left_node_or_primitive_index + 1];
 
-                    let left_dist = left_node.aabb.hit(ray, t_min, t_max);
-                    let right_dist = right_node.aabb.hit(ray, t_min, t_max);
+                    let left_dist_option = left_node.aabb.hit(ray, t_min, min_hit_result.t);
+                    let right_dist_option = right_node.aabb.hit(ray, t_min, min_hit_result.t);
 
-                    if !left_dist.is_some() && !right_dist.is_some() {
+                    if !left_dist_option.is_some() && !right_dist_option.is_some() {
                         if stack_ptr == 0 {
                             break;
                         } else {
                             stack_ptr -= 1;
                             node = stack[stack_ptr];
                         }
+                    } else if left_dist_option.is_some() && right_dist_option.is_some() {
+                        let left_dist = left_dist_option.unwrap();
+                        let right_dist = right_dist_option.unwrap();
+                        
+                        if left_dist < right_dist {
+                            node = left_node;
+                            stack[stack_ptr] = right_node;
+                        }
+                        else {
+                            node = right_node;
+                            stack[stack_ptr] = left_node;
+                        }
+                        stack_ptr += 1;
+                    } else if right_dist_option.is_some() {
+                        node = right_node;
                     } else {
                         node = left_node;
-                        if right_dist.is_some() {
-                            stack[stack_ptr] = right_node;
-                            stack_ptr += 1;
-                        }
                     }
                 }
             }
         }
 
-        
         if min_index.is_some() {
             return (Some(min_hit_result), self.primitive(min_index.unwrap()).as_ref());
-        } else {
-            return (None, self.primitive(0).as_ref());
-        }
+        } 
+        
+        return (None, self.primitive(0).as_ref());
     }
 
     pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> (Option<HitResult>, &dyn Traceable) {

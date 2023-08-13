@@ -90,8 +90,8 @@ impl Traceable for Sphere {
         &self.aabb
     }
 
-    fn centroid(&self) -> Vec3A {
-        self.position
+    fn centroid(&self) -> &Vec3A {
+        &self.position
     }
 
     fn material(&self) -> &Arc<dyn Material> {
