@@ -237,42 +237,30 @@ impl BVH {
                         node = stack[stack_ptr];
                     }
                 } else {
-                    let left_node = &self.nodes[(*node).left_node_or_primitive_index];
-                    let right_node = &self.nodes[(*node).left_node_or_primitive_index + 1];
+                    aabb_hit_counter += 1;
 
-                    let left_dist_option = left_node.aabb.hit(ray, 0.0, min_hit_result.t);
-                    let right_dist_option = right_node.aabb.hit(ray, 0.0, min_hit_result.t);
+                    let node_dist_option = (*node).aabb.hit(ray, 0.0, min_hit_result.t);
+                    if node_dist_option.is_some() {
+                        let left_node = &self.nodes[(*node).left_node_or_primitive_index];
+                        let right_node = &self.nodes[(*node).left_node_or_primitive_index + 1];
 
-                    aabb_hit_counter += 2;
-
-                    if !left_dist_option.is_some() && !right_dist_option.is_some() {
+                        node = left_node;
+                        stack[stack_ptr] = right_node;
+                        stack_ptr += 1;
+                    }
+                    else {
                         if stack_ptr == 0 {
                             break;
                         } else {
                             stack_ptr -= 1;
                             node = stack[stack_ptr];
                         }
-                    } else if left_dist_option.is_some() && right_dist_option.is_some() {
-                        let left_dist = left_dist_option.unwrap();
-                        let right_dist = right_dist_option.unwrap();
-                        
-                        if left_dist < right_dist {
-                            node = left_node;
-                            stack[stack_ptr] = right_node;
-                        }
-                        else {
-                            node = right_node;
-                            stack[stack_ptr] = left_node;
-                        }
-                        stack_ptr += 1;
-                    } else if right_dist_option.is_some() {
-                        node = right_node;
-                    } else {
-                        node = left_node;
                     }
                 }
             }
         }
+
+        println!("hit: {};  aabb: {};", hit_counter, aabb_hit_counter);
 
         if min_index.is_some() {
             return (Some(min_hit_result), self.primitive(min_index.unwrap()).as_ref());
