@@ -237,40 +237,19 @@ impl BVH {
                         node = stack[stack_ptr];
                     }
                 } else {
-                    let node_dist_option = (*node).aabb.hit(ray, 0.0, min_hit_result.t);
-                    if !node_dist_option.is_some() {
-                        if stack_ptr == 0 {
-                            break;
-                        } else {
-                            stack_ptr -= 1;
-                            node = stack[stack_ptr];
-                            continue;
-                        }
-                    }
-
-                    let left_node = &self.nodes[(*node).left_node_or_primitive_index];
-                    let right_node = &self.nodes[(*node).left_node_or_primitive_index + 1];
-
-                    let left_dist_option = left_node.aabb.hit(ray, 0.0, min_hit_result.t);
                     aabb_hit_counter += 1;
-                    if left_dist_option.is_some() {
+
+                    let node_dist_option = (*node).aabb.hit(ray, 0.0, min_hit_result.t);
+                    if node_dist_option.is_some() {
+                        let left_node = &self.nodes[(*node).left_node_or_primitive_index];
+                        let right_node = &self.nodes[(*node).left_node_or_primitive_index + 1];
+
                         node = left_node;
-
-                        let left_dist = left_dist_option.unwrap();
-
-                        let right_dist_option = right_node.aabb.hit(ray, 0.0, left_dist);
-                        aabb_hit_counter += 1;
-                        if right_dist_option.is_some() {
-                            stack[stack_ptr] = right_node; 
-                            stack_ptr += 1;
-                        }
+                        stack[stack_ptr] = right_node;
+                        stack_ptr += 1;
                     }
                     else {
-                        let right_dist_option = right_node.aabb.hit(ray, 0.0, min_hit_result.t);
-                        aabb_hit_counter += 1;
-                        if right_dist_option.is_some() {
-                            node = right_node;
-                        } else if stack_ptr == 0 {
+                        if stack_ptr == 0 {
                             break;
                         } else {
                             stack_ptr -= 1;
@@ -281,7 +260,7 @@ impl BVH {
             }
         }
 
-        //println!("hit: {};  aabb: {};", hit_counter, aabb_hit_counter);
+        println!("hit: {};  aabb: {};", hit_counter, aabb_hit_counter);
 
         if min_index.is_some() {
             return (Some(min_hit_result), self.primitive(min_index.unwrap()).as_ref());
