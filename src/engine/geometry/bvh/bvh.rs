@@ -121,26 +121,31 @@ impl BVH {
         let mut best_cost = f32::MAX;
 
         for axis in 0..3 {
-            let mut min = node.aabb.min[axis];
-            let mut max = node.aabb.max[axis];
+            let mut min = f32::MAX;
+            let mut max = f32::MIN;
 
             for i in 0..node.primitives_count {
                 let primitive_index = node.left_node_or_primitive_index + i;
                 let primitive = &self.primitives[self.primitive_indices[primitive_index]];
+
 
                 min = min.min(primitive.centroid()[axis]);
                 max = max.max(primitive.centroid()[axis]);
             }
 
+            if min == max {
+                continue;
+            }
+
             const BINS: usize = 100;
             let mut bins = [Bin::new(); BINS];
-            let scale = (max - min) / BINS as f32;
+            let mut scale = BINS as f32 / (max - min);
 
             for i in 0..node.primitives_count {
                 let primitive_index = node.left_node_or_primitive_index + i;
                 let primitive = &self.primitives[self.primitive_indices[primitive_index]];
 
-                let mut bin_index = ((primitive.centroid()[axis] - min) / scale) as usize;
+                let mut bin_index = ((primitive.centroid()[axis] - min) * scale) as usize;
                 bin_index = bin_index.min(BINS - 1);
 
                 bins[bin_index].primitive_count += 1;
@@ -159,16 +164,17 @@ impl BVH {
             let mut right_count = 0;
             for i in 0..BINS - 1 {
                 left_count += bins[i].primitive_count;
-                left_aabb = left_aabb.extend(&bins[i].aabb);
                 left_primitives[i] = left_count;
+                left_aabb = left_aabb.extend(&bins[i].aabb);
                 left_area[i] = left_aabb.area();
 
                 right_count += bins[BINS - 1 - i].primitive_count;
-                right_aabb = right_aabb.extend(&bins[BINS - 1 - i].aabb);
                 right_primitives[BINS - 2 - i] = right_count;
+                right_aabb = right_aabb.extend(&bins[BINS - 1 - i].aabb);
                 right_area[BINS - 2 - i] = right_aabb.area();
             }
 
+            scale = (max - min) / BINS as f32;
             for i in 0..BINS - 1 {
                 let candidate_pos = min + scale * (i + 1) as f32;
                 let cost = left_primitives[i] as f32 * left_area[i] +
@@ -193,6 +199,9 @@ impl BVH {
         let mut node: *const Node = &self.nodes[node_index];
         let mut stack_ptr = 0;
 
+        let mut hit_counter = 0;
+        let mut aabb_hit_counter = 0;
+
         let mut min_hit_result = HitResult{
             position : Vec3A::ZERO, 
             t : t_max, 
@@ -215,6 +224,8 @@ impl BVH {
                             if hit_result.t < min_hit_result.t {
                                 min_hit_result = hit_result;
                                 min_index = Some(primitive_index);
+
+                                hit_counter += 1;
                             }
                         }
                     }
@@ -229,8 +240,10 @@ impl BVH {
                     let left_node = &self.nodes[(*node).left_node_or_primitive_index];
                     let right_node = &self.nodes[(*node).left_node_or_primitive_index + 1];
 
-                    let left_dist_option = left_node.aabb.hit(ray, t_min, min_hit_result.t);
-                    let right_dist_option = right_node.aabb.hit(ray, t_min, min_hit_result.t);
+                    let left_dist_option = left_node.aabb.hit(ray, 0.0, min_hit_result.t);
+                    let right_dist_option = right_node.aabb.hit(ray, 0.0, min_hit_result.t);
+
+                    aabb_hit_counter += 2;
 
                     if !left_dist_option.is_some() && !right_dist_option.is_some() {
                         if stack_ptr == 0 {

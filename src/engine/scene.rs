@@ -451,6 +451,7 @@ impl Scene {
 
         let mut context = GLTFContext::new();
 
+        let load_gltf_images = Profile::new(format!("Load gltf images").as_str(), ProfileType::INSTANT);
         context.decoded_buffers.resize(gltf.buffers().count(), Vec::new());
         for buffer in gltf.buffers() {
             match buffer.source() {
@@ -512,6 +513,7 @@ impl Scene {
                 }
             }
         }
+        drop(load_gltf_images);
 
         for scene in gltf.scenes() {
             for node in scene.nodes() {
