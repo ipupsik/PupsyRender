@@ -121,6 +121,8 @@ impl Renderer {
     }
 
     pub fn render(&self, camera: Arc<PerspectiveCamera>, render_context : Arc<RenderContext>) {
+        let render_time = Profile::new(format!("Render").as_str(), ProfileType::INSTANT);
+
         let height: u32 = render_context.resolution;
         let width: u32 = (height as f32 * camera.aspect_ratio()) as u32;
     
@@ -167,42 +169,55 @@ impl Renderer {
             type Output = WorkerOutput;
         
             fn execute(&mut self, inp: Self::Input) -> Self::Output {
+                const CACHE_LOCALITY_TILE_SIZE: usize = 1;
+
                 let mut output = WorkerOutput::new();
 
-                for local_y in 0..TILE_SIZE {
-                    if inp.y + local_y > inp.height as usize {
+                for local_y in 0..TILE_SIZE  / CACHE_LOCALITY_TILE_SIZE {
+                    if inp.y + local_y * CACHE_LOCALITY_TILE_SIZE >= inp.height as usize {
                         break;
                     }
-                    for local_x in 0..TILE_SIZE {
-                        if inp.x + local_x > inp.width as usize {
+                    for local_x in 0..TILE_SIZE  / CACHE_LOCALITY_TILE_SIZE {
+                        if inp.x + local_x * CACHE_LOCALITY_TILE_SIZE >= inp.width as usize {
                             break;
                         }
-                        let mut current_color = Vec3A::ZERO;
-                        for sample_index in 0..inp.render_context.spp {
-                            let x = inp.x + local_x;
-                            let y = inp.y + local_y;
+                        for cache_locality_x in 0..CACHE_LOCALITY_TILE_SIZE {
+                            if local_x * CACHE_LOCALITY_TILE_SIZE + cache_locality_x >= TILE_SIZE as usize {
+                                break;
+                            }
+                            for cache_locality_y in 0..CACHE_LOCALITY_TILE_SIZE {
+                                if local_y * CACHE_LOCALITY_TILE_SIZE + cache_locality_y >= TILE_SIZE as usize {
+                                    break;
+                                }
 
-                            let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (inp.width - 1) as f32;
-                            let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (inp.height - 1) as f32;
-            
-                            let ray = inp.camera.get_ray(u, 1.0 - v);
-            
-                            let mut current_sample = Renderer::sample_scene(&ray, 
-                                &inp.render_context.scene, inp.render_context.max_depth);
-        
-                            if current_sample.x.is_nan() {
-                                current_sample.x = 1.0;
-                            }
-                            if current_sample.y.is_nan() {
-                                current_sample.y = 1.0;
-                            }
-                            if current_sample.z.is_nan() {
-                                current_sample.z = 1.0;
-                            }
+                                let mut current_color = Vec3A::ZERO;
+                                for sample_index in 0..inp.render_context.spp {
+                                    let x = inp.x + local_x * CACHE_LOCALITY_TILE_SIZE + cache_locality_x;
+                                    let y = inp.y + local_y * CACHE_LOCALITY_TILE_SIZE + cache_locality_y;
 
-                            current_color += current_sample / inp.render_context.spp as f32;
+                                    let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (inp.width - 1) as f32;
+                                    let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (inp.height - 1) as f32;
+                    
+                                    let ray = inp.camera.get_ray(u, 1.0 - v);
+                    
+                                    let mut current_sample = Renderer::sample_scene(&ray, 
+                                        &inp.render_context.scene, inp.render_context.max_depth);
+                
+                                    if current_sample.x.is_nan() {
+                                        current_sample.x = 1.0;
+                                    }
+                                    if current_sample.y.is_nan() {
+                                        current_sample.y = 1.0;
+                                    }
+                                    if current_sample.z.is_nan() {
+                                        current_sample.z = 1.0;
+                                    }
+
+                                    current_color += current_sample / inp.render_context.spp as f32;
+                                }
+                                output.tile[local_x * CACHE_LOCALITY_TILE_SIZE + cache_locality_x][local_y * CACHE_LOCALITY_TILE_SIZE + cache_locality_y] = current_color;
+                            }
                         }
-                        output.tile[local_x][local_y] = current_color;
                     }
                 }
 
@@ -246,6 +261,10 @@ impl Renderer {
             output_frame_buffer[output.task_index] = output;
         }
 
+        drop(render_time);
+
+        let png_time = Profile::new(format!("PNG").as_str(), ProfileType::INSTANT);
+        
         let mut rgb_frame_buffer = ImageBuffer::new(width, height);
 
         for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
@@ -268,5 +287,7 @@ impl Renderer {
         }
     
         rgb_frame_buffer.save(render_context.output.as_str()).unwrap();
+
+        drop(png_time);
     }
 }

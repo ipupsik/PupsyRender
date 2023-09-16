@@ -1,5 +1,5 @@
 [package]
-name = "pupsy_raytracing_engine"
+name = "pupsy_render"
 version = "1.0.0"
 edition = "2021"
 

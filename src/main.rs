@@ -1,9 +1,9 @@
-use pupsy_raytracing_engine::engine::{renderer::Renderer, render_context::RenderContext, 
+use pupsy_render::engine::{renderer::Renderer, render_context::RenderContext, 
     scene::Scene};
 use std::env;
 use std::process::exit;
 use std::sync::{Arc};
-use pupsy_raytracing_engine::engine::profile::*;
+use pupsy_render::engine::profile::*;
 
 fn main() {
     let mut render_context = RenderContext::new();
@@ -83,11 +83,9 @@ fn main() {
 
     let render_context = Arc::new(render_context);
 
-    let render_time = Profile::new(format!("Render").as_str(), ProfileType::INSTANT);
     for (index, camera) in render_context.scene.cameras.iter().enumerate() {
         renderer.render(camera.clone(),  render_context.clone());
     }
-    drop(render_time);
 
     drop(total_time);
 }

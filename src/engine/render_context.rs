@@ -19,7 +19,7 @@ impl RenderContext {
     pub fn new() -> Self {
         Self {
             scene: Scene::new(),
-            spp: 100,
+            spp: 50,
             output: String::from("test.png"),
             max_depth: 50,
             resolution: 1024,
