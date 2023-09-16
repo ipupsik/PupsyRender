@@ -536,9 +536,7 @@ impl Scene {
 
         for scene in gltf.scenes() {
             for node in scene.nodes() {
-                let node_transform_matrix = node.transform().matrix();
-                let matrix = &Mat4::from_cols_array_2d(&node_transform_matrix);
-                self.load_gltf_node(&mut context, &node, matrix);
+                self.load_gltf_node(&mut context, &node, &Mat4::IDENTITY);
             }
         }
 
