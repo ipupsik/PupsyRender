@@ -2,4 +2,4 @@
  
 ![image](duck.png)
 
-![image](examples/3.png)
+![image](example/3.png)
