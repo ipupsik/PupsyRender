@@ -169,7 +169,7 @@ impl Renderer {
             type Output = WorkerOutput;
         
             fn execute(&mut self, inp: Self::Input) -> Self::Output {
-                const CACHE_LOCALITY_TILE_SIZE: usize = 1;
+                const CACHE_LOCALITY_TILE_SIZE: usize = 4;
 
                 let mut output = WorkerOutput::new();
 

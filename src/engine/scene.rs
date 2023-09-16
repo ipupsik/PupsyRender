@@ -314,7 +314,6 @@ impl Scene {
 
                 for (i, normal) in normals.iter_mut().enumerate() {
                     let triangle_normal = (positions[i][0] - positions[i][1]).cross(positions[i][0] - positions[i][2]).normalize();
-                    *normal = [triangle_normal, triangle_normal, triangle_normal];
 
                     let delta_pos1 = positions[i][1] - positions[i][0];
                     let delta_pos2 = positions[i][2] - positions[i][0];
@@ -328,15 +327,15 @@ impl Scene {
                     let binormal = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * r; 
 
                     let tangent = [
-                        tangent - normal[0].dot(tangent) * normal[0], 
-                        tangent - normal[1].dot(tangent) * normal[1], 
-                        tangent - normal[2].dot(tangent) * normal[2], 
+                        tangent - triangle_normal.dot(tangent) * triangle_normal, 
+                        tangent - triangle_normal.dot(tangent) * triangle_normal, 
+                        tangent - triangle_normal.dot(tangent) * triangle_normal, 
                     ];
 
                     let binormal = [
-                        binormal - normal[0].dot(binormal) * normal[0] - tangent[0].dot(binormal) * tangent[0], 
-                        binormal - normal[1].dot(binormal) * normal[1] - tangent[1].dot(binormal) * tangent[1], 
-                        binormal - normal[2].dot(binormal) * normal[2] - tangent[2].dot(binormal) * tangent[2], 
+                        binormal - triangle_normal.dot(binormal) * triangle_normal - tangent[0].dot(binormal) * tangent[0], 
+                        binormal - triangle_normal.dot(binormal) * triangle_normal - tangent[1].dot(binormal) * tangent[1], 
+                        binormal - triangle_normal.dot(binormal) * triangle_normal - tangent[2].dot(binormal) * tangent[2], 
                     ];
 
                     tangents.push(tangent);
@@ -537,7 +536,9 @@ impl Scene {
 
         for scene in gltf.scenes() {
             for node in scene.nodes() {
-                self.load_gltf_node(&mut context, &node, &Mat4::IDENTITY);
+                let node_transform_matrix = node.transform().matrix();
+                let matrix = &Mat4::from_cols_array_2d(&node_transform_matrix);
+                self.load_gltf_node(&mut context, &node, matrix);
             }
         }
 

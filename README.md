@@ -1,3 +1,3 @@
 # RayTracingContest
  
-![image](image.png)
+![image](duck.png)

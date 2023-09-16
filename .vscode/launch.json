@@ -4,16 +4,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'pupsy_raytracing_engine'",
+            "name": "Debug unit tests in library 'pupsy_render'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=pupsy_raytracing_engine"
+                    "--package=pupsy_render"
                 ],
                 "filter": {
-                    "name": "pupsy_raytracing_engine",
+                    "name": "pupsy_render",
                     "kind": "lib"
                 }
             },
@@ -23,15 +23,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'pupsy_raytracing_engine'",
+            "name": "Debug executable 'pupsy_render'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=pupsy_raytracing_engine",
-                    "--package=pupsy_raytracing_engine"
+                    "--bin=pupsy_render",
+                    "--package=pupsy_render"
                 ],
                 "filter": {
-                    "name": "pupsy_raytracing_engine",
+                    "name": "pupsy_render",
                     "kind": "bin"
                 }
             },
@@ -47,13 +47,13 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'pupsy_raytracing_engine'",
+            "name": "Debug unit tests in executable 'pupsy_render'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=pupsy_raytracing_engine",
-                    "--package=pupsy_raytracing_engine"
+                    "--bin=pupsy_render",
+                    "--package=pupsy_render"
                 ],
                 "filter": {
                     "name": "pupsy_raytracing_engine",
