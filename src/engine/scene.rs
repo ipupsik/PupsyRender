@@ -1,5 +1,6 @@
 use std::vec;
 use glam::{Vec3A, Vec4, Mat4};
+use gltf::Glb;
 use image::GenericImageView;
 use crate::engine::geometry::bvh::aabb::AABB;
 use crate::engine::material::*;
@@ -17,6 +18,8 @@ use crate::engine::geometry::bvh::bvh::*;
 use crate::engine::geometry::sphere::*;
 use crate::engine::math::utils::*;
 use crate::engine::camera::*;
+use std::path::Path;
+use std::ffi::OsStr;
 
 use super::geometry::sphere;
 use super::geometry::traceable::*;
@@ -445,21 +448,39 @@ impl Scene {
     pub fn load_gltf(&mut self, path: &str) {
         let load_gltf_profile = Profile::new(format!("Load gltf file, {}", path).as_str(), ProfileType::INSTANT);
 
+        let ext = Path::new(path)
+            .extension()
+            .and_then(OsStr::to_str).expect("invalid extension");
+
         let file = fs::File::open(path).expect(format!("Invalid filename: {}", path).as_str());
         let reader = io::BufReader::new(file);
         let gltf = gltf::Gltf::from_reader(reader).unwrap();
-
         let mut context = GLTFContext::new();
 
-        let load_gltf_images = Profile::new(format!("Load gltf images").as_str(), ProfileType::INSTANT);
         context.decoded_buffers.resize(gltf.buffers().count(), Vec::new());
+        if (ext == "glb") {
+            let file = fs::File::open(path).expect(format!("Invalid filename: {}", path).as_str());
+            let reader = io::BufReader::new(file);
+            let glb = gltf::Glb::from_reader(reader).unwrap();
+            for buffer in gltf.buffers() {
+                match buffer.source() {
+                    gltf::buffer::Source::Uri(data) => {
+                        
+                    },
+                    gltf::buffer::Source::Bin => {
+                        context.decoded_buffers[buffer.index()] = glb.bin.clone().unwrap().to_vec();
+                    }
+                }
+            }
+        }
+
         for buffer in gltf.buffers() {
             match buffer.source() {
                 gltf::buffer::Source::Uri(data) => {
                     let url = DataUrl::process(data).unwrap();
                     (context.decoded_buffers[buffer.index()], _) = url.decode_to_vec().unwrap();
                 },
-                gltf::buffer::Source::Bin => println!("Engine does not support binary buffer format"),
+                gltf::buffer::Source::Bin => {}
             }
         }
 
@@ -513,7 +534,6 @@ impl Scene {
                 }
             }
         }
-        drop(load_gltf_images);
 
         for scene in gltf.scenes() {
             for node in scene.nodes() {

@@ -36,9 +36,11 @@
                 }
             },
             "args": [
-                "--in", "example/example4.gltf",
+                "--in", "example/Duck.glb",
+                "--out", "duck.png",
                 "--spp", "100",
-                "--depth", "100"
+                "--bounces", "100",
+                "--height", "256"
             ],
             "cwd": "${workspaceFolder}"
         },

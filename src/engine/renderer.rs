@@ -4,8 +4,11 @@ use crate::engine::math::ray::*;
 use crate::engine::scene::*;
 use glam::{Vec3A};
 use gltf::mesh::util::weights;
+use workerpool::Worker;
 use crate::engine::geometry::bvh::node::*;
 use crate::engine::material::pdf::cosine::*;
+use workerpool::Pool;
+use workerpool::thunk::{Thunk, ThunkWorker};
 use rand::Rng;
 
 use image::{ImageBuffer};
@@ -50,7 +53,7 @@ impl Renderer {
 
             if !hit_result_option.is_some() {
                 let t = 0.5 * (ray.direction.y + 1.0);
-                let sky = (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.5, 0.7, 1.0);
+                let sky = (1.0 - t) * Vec3A::new(1.0, 1.0, 1.0) + t * Vec3A::new(0.9, 0.3, 0.3);
 
                 return average_sample * (sky);
             }
@@ -121,58 +124,71 @@ impl Renderer {
         let height: u32 = render_context.resolution;
         let width: u32 = (height as f32 * camera.aspect_ratio()) as u32;
     
-        struct WorkerInfo {
-            pub back_buffer_chunk: Vec<Vec3A>,
+        struct WorkerInput {
+            pub task_index: usize,
+            pub x: usize,
+            pub y: usize,
+            pub height: u32,
+            pub width: u32,
+            pub render_context: Arc<RenderContext>,
+            pub camera: Arc<PerspectiveCamera>
+        }
+
+        #[derive(Clone)]
+        #[derive(Copy)]
+        struct WorkerOutput {
+            pub task_index: usize,
+            pub tile: [[Vec3A; TILE_SIZE]; TILE_SIZE],
             pub sample_index: u32,
         }
-        let mut output_frame_buffer: Vec<WorkerInfo> = Vec::new();
-        let mut rgb_frame_buffer = ImageBuffer::new(width, height);
-        
-        // Parallel our work
-        let frame_buffer_len = (width * height) as usize;
 
-        //let num_cores = 1;
-        let num_cores = num_cpus::get();
-        let chunk_size = frame_buffer_len / num_cores;
-
-        let mut threads = Vec::with_capacity(num_cores);
-
-        let (tx, rx) =  mpsc::channel();
-
-        for thr in 0..num_cores
-        {
-            let index_begin = thr * chunk_size;
-            let mut index_end = (thr + 1) * chunk_size;
-            if thr == num_cores - 1
-            {
-                index_end = frame_buffer_len;
+        impl WorkerOutput {
+            pub fn new() -> Self {
+                WorkerOutput{
+                    task_index: 0,
+                    tile: [[Vec3A::ZERO; TILE_SIZE]; TILE_SIZE], 
+                    sample_index: 0
+                }
             }
+        }
 
-            output_frame_buffer.push(WorkerInfo{back_buffer_chunk: Vec::new(), sample_index: 0});
-            output_frame_buffer[thr].back_buffer_chunk.resize((index_end - index_begin) as usize, Vec3A::ZERO);
+        struct RenderTask {
+           
+        }
+        impl Default for RenderTask {
+            fn default() -> Self {
+                Self {
+                   
+                }
+            }
+        }
+        impl Worker for RenderTask {
+            type Input = WorkerInput;
+            type Output = WorkerOutput;
+        
+            fn execute(&mut self, inp: Self::Input) -> Self::Output {
+                let mut output = WorkerOutput::new();
 
-            let camera = Arc::new(camera.clone());
-            let render_context = Arc::new(render_context.clone());
+                for local_y in 0..TILE_SIZE {
+                    if inp.y + local_y > inp.height as usize {
+                        break;
+                    }
+                    for local_x in 0..TILE_SIZE {
+                        if inp.x + local_x > inp.width as usize {
+                            break;
+                        }
+                        let mut current_color = Vec3A::ZERO;
+                        for sample_index in 0..inp.render_context.spp {
+                            let x = inp.x + local_x;
+                            let y = inp.y + local_y;
 
-            let tx =  tx.clone();
-            threads.push(
-                thread::spawn(move || {
-                    let sample_scene_profile = Profile::new(format!("Thread#{} sample scene", thr).as_str(), ProfileType::INSTANT);
-
-                    let mut frame_buffer_slice = vec![Vec3A::ZERO; index_end - index_begin];
-                    for sample_index in 0..render_context.spp {
-                        for i in 0..index_end - index_begin
-                        {
-                            let x = (index_begin + i) as u32 % width;
-                            let y = (index_begin + i) as u32 / width;
-
-                            let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (width - 1) as f32;
-                            let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (height - 1) as f32;
+                            let u = (x as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (inp.width - 1) as f32;
+                            let v = (y as f32 + rand::thread_rng().gen_range(0.0..1.0)) / (inp.height - 1) as f32;
             
-                            let ray = camera.get_ray(u, 1.0 - v);
+                            let ray = inp.camera.get_ray(u, 1.0 - v);
             
-                            let mut current_sample = Self::sample_scene(&ray, 
-                                &render_context.scene, render_context.max_depth);
+                            let mut current_sample = Renderer::sample_scene(&ray, 
+                                &inp.render_context.scene, inp.render_context.max_depth);
         
                             if current_sample.x.is_nan() {
                                 current_sample.x = 1.0;
@@ -184,48 +200,73 @@ impl Renderer {
                                 current_sample.z = 1.0;
                             }
 
-                            frame_buffer_slice[i] += current_sample / render_context.spp as f32;
+                            current_color += current_sample / inp.render_context.spp as f32;
                         }
-                        tx.send((frame_buffer_slice.clone(), thr, sample_index)).unwrap();
+                        output.tile[local_x][local_y] = current_color;
                     }
-
-                    drop(sample_scene_profile);
-                })
-            );
-        }
-
-        for sample_index in 0..render_context.spp {
-            for v in rx.iter().take(num_cores){
-                let (frame_buffer_slice, thread_index, sample_index) = v;
-                output_frame_buffer[thread_index].back_buffer_chunk = frame_buffer_slice;
-                output_frame_buffer[thread_index].sample_index = sample_index;
-            }
-
-            for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
-                *pixel = Rgb([0, 0, 0]);
-                let mut linear_index = (y * width + x) as usize;
-                for chunk in output_frame_buffer.iter() {
-                    if linear_index < chunk.back_buffer_chunk.len() {
-                        let mut scene_color = chunk.back_buffer_chunk[linear_index];
-        
-                        //scene_color = Self::tone_mapping(scene_color);
-                        scene_color *= render_context.spp as f32 / (chunk.sample_index as f32 + 1.0);
-                        scene_color = Self::gamma_correction(scene_color);  
-                        scene_color *= 255.0;
-    
-                        *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
-                        break;
-                    }
-                    linear_index -= chunk.back_buffer_chunk.len();
                 }
+
+                output.sample_index = inp.render_context.spp - 1;
+                output.task_index = inp.task_index;
+                output
             }
-        
-            rgb_frame_buffer.save(format!("example/{}.png", camera.name())).unwrap();
         }
 
-        for thr in threads
+        let pool = Pool::<RenderTask>::new(num_cpus::get());
+        let mut tile_x: usize = (width / TILE_SIZE as u32) as usize;
+        tile_x += if width as usize % TILE_SIZE > 0 {1} else {0};
+
+        let mut tile_y: usize = (height / TILE_SIZE as u32) as usize;
+        tile_y += if height as usize % TILE_SIZE > 0 {1} else {0};
+
+        let num_tasks = tile_x * tile_y;
+
+        let mut output_frame_buffer: Vec<WorkerOutput> = vec![WorkerOutput::new(); num_tasks];
+
+        let (tx, rx) =  mpsc::channel();
+
+        for tile_x_index in 0..tile_x
         {
-            thr.join().unwrap();
+            for tile_y_index in 0..tile_y
+            {
+                let inp = WorkerInput{
+                    task_index: tile_x_index + tile_y_index * tile_x,
+                    x: tile_x_index * TILE_SIZE,
+                    y: tile_y_index * TILE_SIZE,
+                    height: height,
+                    width: width,
+                    render_context: render_context.clone(),
+                    camera: camera.clone(),
+                };
+                pool.execute_to(tx.clone(), inp);
+            }
         }
+
+        for output in rx.iter().take(num_tasks){
+            output_frame_buffer[output.task_index] = output;
+        }
+
+        let mut rgb_frame_buffer = ImageBuffer::new(width, height);
+
+        for (x, y, pixel) in rgb_frame_buffer.enumerate_pixels_mut() {
+            *pixel = Rgb([0, 0, 0]);
+            let tile_x_index: usize = (x / TILE_SIZE as u32) as usize;
+            let tile_y_index: usize = (y / TILE_SIZE as u32) as usize;
+            let local_tile_x_index: usize = (x % TILE_SIZE as u32) as usize;
+            let local_tile_y_index: usize = (y % TILE_SIZE as u32) as usize;
+
+            let chunk = &output_frame_buffer[tile_y_index * tile_x + tile_x_index];
+
+            let mut scene_color = chunk.tile[local_tile_x_index][local_tile_y_index];
+    
+            //scene_color = Self::tone_mapping(scene_color);
+            scene_color *= render_context.spp as f32 / (chunk.sample_index as f32 + 1.0);
+            scene_color = Self::gamma_correction(scene_color);  
+            scene_color *= 255.0;
+
+            *pixel = Rgb([scene_color.x as u8, scene_color.y as u8, scene_color.z as u8]);
+        }
+    
+        rgb_frame_buffer.save(render_context.output.as_str()).unwrap();
     }
 }

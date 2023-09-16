@@ -28,7 +28,7 @@ impl Texture2D {
         let uv = uv.fract();
 
         if !self.valid() {
-            return Vec4::ZERO;
+            return Vec4::ONE;
         }
 
         let x = uv.x * (self.texture.dimensions[0] - 1) as f32;

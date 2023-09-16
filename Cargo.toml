@@ -11,6 +11,7 @@ rand = "0.8.5"
 glam = "0.24.1"
 data-url = "0.3.0"
 num_cpus = "1.16.0"
+workerpool = "1.2.0"
 
 [dependencies.gltf]
 version = "1.2"
