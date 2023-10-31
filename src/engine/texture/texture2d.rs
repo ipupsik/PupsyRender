@@ -34,7 +34,7 @@ impl Texture2D {
         let x = uv.x * (self.texture.dimensions[0] - 1) as f32;
         let y = uv.y * (self.texture.dimensions[1] - 1) as f32;
 
-        let color = self.texture.raw_texture.get_pixel(x as u32, y as u32);
+        let color = unsafe {self.texture.raw_texture.unsafe_get_pixel(x as u32, y as u32)};
 
         let final_color = Vec4::new(color[0] as f32, color[1] as f32, color[2] as f32, color[3] as f32);
 
